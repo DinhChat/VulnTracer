@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | VulnTracer</title>
+    <link rel="stylesheet" href="/css/login.css" />
+    <script defer src="/script/login.js"></script>
+</head>
+<body>
+<div class="login-wrapper">
+    <div class="login-container">
+        <h1 class="title">Vulnerable Tracer Login</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Enter your username" required />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required />
+            </div>
+
+            <button type="submit" class="btn-login">Login</button>
+            <p id="errorMessage" class="error-message"></p>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vulnerable Tracer</title>
+    <link rel="stylesheet" href="/css/dashboard.css" />
+    <script defer src="/script/dashboard.js"></script>
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="brand">
+            <span class="brand-main">VulnTracer</span>
+            <span class="brand-sub">Web application scanner</span>
+        </div>
+        <nav class="top_nav">
+            <a href="#" class="active">Scans</a>
+            <a href="#">Settings</a>
+        </nav>
+    </div>
+    <div class="topbar-right">
+        <div class="user-info">
+            <span id="username"></span>
+            <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="User" class="avatar" />
+        </div>
+    </div>
+</header>
+
+<div class="layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="menu-section">
+            <div class="menu-title">FOLDERS</div>
+            <a href="#" class="menu-item active">My Scans</a>
+            <a href="#" class="menu-item">All Scans</a>
+            <a href="#" class="menu-item">Trash</a>
+        </div>
+
+        <div class="menu-section">
+            <div class="menu-title">RESOURCES</div>
+            <a href="#" class="menu-item">Policies</a>
+            <a href="#" class="menu-item">Plugin Rules</a>
+            <a href="#" class="menu-item">Terrascan</a>
+        </div>
+
+        <div class="news-section">
+            <div class="news-title">VulnTracer News</div>
+            <div class="news-item">CVE database updated on Oct 2025</div>
+            <div class="news-item">Report export feature in beta</div>
+            <a href="#" class="news-link">Read more</a>
+        </div>
+    </aside>
+
+    <main class="content">
+        <div class="content-header">
+            <h2>My Scans</h2>
+            <div class="action-buttons">
+                <button class="btn">Import</button>
+                <button class="btn">New Folder</button>
+                <button class="btn primary">+ New Scan</button>
+            </div>
+        </div>
+
+        <div class="scan-list" id="scanList">
+            <div class="empty-state">
+                <p>This folder is empty.</p>
+                <a href="#" class="link">Create a new scan.</a>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>
