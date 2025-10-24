@@ -3,8 +3,8 @@ package com.hust.soict.vulntracer.request;
 import lombok.Data;
 
 @Data
-public class SignUpRequest {
-    private String email;
+public class RegisterRequest {
     private String username;
     private String password;
+    private String confirmPassword;
 }

@@ -2,7 +2,7 @@ package com.hust.soict.vulntracer.controller;
 
 import com.hust.soict.vulntracer.model.User;
 import com.hust.soict.vulntracer.request.LoginRequest;
-import com.hust.soict.vulntracer.request.SignUpRequest;
+import com.hust.soict.vulntracer.request.RegisterRequest;
 import com.hust.soict.vulntracer.response.UserResponse;
 import com.hust.soict.vulntracer.security.JwtProvider;
 import com.hust.soict.vulntracer.service.UserService;
@@ -20,64 +20,66 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "*")
+@CrossOrigin
 @RequestMapping("/auth")
 public class AuthController {
-    private final UserDetailsService userDetailsService;
-    private final UserService userService;
     private final JwtProvider jwtProvider;
+    private final UserService userService;
+    private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthController(UserDetailsService userDetailsService,
-                          UserService userService,
-                          JwtProvider jwtProvider,
-                          PasswordEncoder passwordEncoder) {
-        this.userDetailsService = userDetailsService;
+    public AuthController(UserService userService, JwtProvider jwtProvider,  UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.jwtProvider = jwtProvider;
+        this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<UserResponse> signUp(@RequestBody SignUpRequest req) throws Exception {
-        User savedUser = userService.registerUser(req);
+    @PostMapping("/register")
+    public ResponseEntity<UserResponse> registerUser(
+            @RequestBody RegisterRequest registerRequest
+    ) throws Exception {
+        User savedUser = userService.registerUser(registerRequest);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 savedUser.getUsername(),
-                savedUser.getPassword(),
+                savedUser.getHashedPassword(),
                 List.of(new SimpleGrantedAuthority(savedUser.getRole().toString()))
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        UserResponse res = new UserResponse();
-        res.setUsername(savedUser.getUsername());
-        res.setJwtToken(jwtProvider.generateJwtToken(authentication));
-        res.setMessage("Sign up successfully!");
-        res.setUserRole(savedUser.getRole());
+        UserResponse userResponse = new UserResponse();
+        userResponse.setUsername(savedUser.getUsername());
+        userResponse.setJwtToken(jwtProvider.generateJwtToken(authentication));
+        userResponse.setMessage("Registered Successfully");
+        userResponse.setRole(savedUser.getRole());
 
-        return new ResponseEntity<>(res, HttpStatus.CREATED);
+        return new ResponseEntity<>(userResponse, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest req) {
-        UserDetails userDetails = userDetailsService.loadUserByUsername(req.getUsername());
-        UserResponse res = new UserResponse();
-        res.setUsername(req.getUsername());
+    public ResponseEntity<UserResponse> login(
+            @RequestBody LoginRequest loginRequest
+    ) {
+        UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+        UserResponse userResponse = new UserResponse();
+        userResponse.setUsername(userDetails.getUsername());
 
-        if (passwordEncoder.matches(req.getPassword(), userDetails.getPassword())) {
+        if (passwordEncoder.matches(loginRequest.getPassword(), userDetails.getPassword())) {
             Authentication authentication = new UsernamePasswordAuthenticationToken(
                     userDetails.getUsername(),
                     userDetails.getPassword(),
                     userDetails.getAuthorities()
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-            res.setJwtToken(jwtProvider.generateJwtToken(authentication));
-            res.setMessage("Login Successfully!");
+            userResponse.setJwtToken(jwtProvider.generateJwtToken(authentication));
+            userResponse.setMessage("Login Successfully!");
         } else {
-            res.setMessage("Login Fail!");
+            userResponse.setMessage("Login Fail!");
         }
 
-        return new ResponseEntity<>(res, HttpStatus.OK);
+        return new ResponseEntity<>(userResponse, HttpStatus.OK);
     }
+
 }

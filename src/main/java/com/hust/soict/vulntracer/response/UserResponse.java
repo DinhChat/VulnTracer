@@ -7,6 +7,6 @@ import lombok.Data;
 public class UserResponse {
     private String username;
     private String jwtToken;
-    private USER_ROLE userRole;
+    private USER_ROLE role;
     private String message;
 }

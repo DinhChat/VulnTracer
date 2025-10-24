@@ -7,6 +7,12 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin
 @RequestMapping
 public class HomeController {
+
+    @GetMapping("/")
+    public String root() {
+        return "dashboard";
+    }
+
     @GetMapping("/home")
     public String getHome() {
         return "dashboard";

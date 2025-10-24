@@ -1,10 +1,8 @@
 package com.hust.soict.vulntracer.service;
 
 import com.hust.soict.vulntracer.model.User;
-import com.hust.soict.vulntracer.request.SignUpRequest;
+import com.hust.soict.vulntracer.request.RegisterRequest;
 
 public interface UserService {
-    public User findUserByEmail(String email) throws Exception;
-    public User findUserByUsername(String username) throws Exception;
-    public User registerUser(SignUpRequest signUpRequest) throws Exception;
+    User registerUser(RegisterRequest registerRequest) throws Exception;
 }
