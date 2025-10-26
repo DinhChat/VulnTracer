@@ -22,4 +22,9 @@ public class HomeController {
     public String login() {
         return "login";
     }
+
+    @GetMapping("auth/register")
+    public String register() {
+        return "register";
+    }
 }

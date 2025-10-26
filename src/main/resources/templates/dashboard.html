@@ -19,10 +19,17 @@
             <a href="#">Settings</a>
         </nav>
     </div>
+
     <div class="topbar-right">
-        <div class="user-info">
-            <span id="username"></span>
-            <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="User" class="avatar" />
+        <div class="user-area">
+            <div class="user-info" id="userSection">
+                <span id="username"></span>
+                <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="User" class="avatar" id="avatar" />
+                <div class="user-menu" id="userMenu">
+                    <a href="/profile" class="user-menu-item">Profile</a>
+                    <a href="#" id="logoutBtn" class="user-menu-item">Logout</a>
+                </div>
+            </div>
         </div>
     </div>
 </header>
@@ -32,29 +39,22 @@
     <aside class="sidebar">
         <div class="menu-section">
             <div class="menu-title">FOLDERS</div>
-            <a href="#" class="menu-item active">My Scans</a>
-            <a href="#" class="menu-item">All Scans</a>
-            <a href="#" class="menu-item">Trash</a>
+            <a href="#" class="menu-item active" data-section="myScans">My Scans</a>
+            <a href="#" class="menu-item" data-section="allScans">All Scans</a>
+            <a href="#" class="menu-item" data-section="trash">Trash</a>
         </div>
 
         <div class="menu-section">
             <div class="menu-title">RESOURCES</div>
-            <a href="#" class="menu-item">Policies</a>
-            <a href="#" class="menu-item">Plugin Rules</a>
-            <a href="#" class="menu-item">Terrascan</a>
-        </div>
-
-        <div class="news-section">
-            <div class="news-title">VulnTracer News</div>
-            <div class="news-item">CVE database updated on Oct 2025</div>
-            <div class="news-item">Report export feature in beta</div>
-            <a href="#" class="news-link">Read more</a>
+            <a href="#" class="menu-item" data-section="policies">Policies</a>
+            <a href="#" class="menu-item" data-section="pluginRules">Plugin Rules</a>
+            <a href="#" class="menu-item" data-section="terrascan">Terrascan</a>
         </div>
     </aside>
 
-    <main class="content">
+    <main class="content" id="mainContent">
         <div class="content-header">
-            <h2>My Scans</h2>
+            <h2 id="sectionTitle">My Scans</h2>
             <div class="action-buttons">
                 <button class="btn">Import</button>
                 <button class="btn">New Folder</button>
@@ -62,13 +62,14 @@
             </div>
         </div>
 
-        <div class="scan-list" id="scanList">
+        <div class="content-body" id="contentBody">
             <div class="empty-state">
                 <p>This folder is empty.</p>
                 <a href="#" class="link">Create a new scan.</a>
             </div>
         </div>
     </main>
+
 </div>
 </body>
 </html>

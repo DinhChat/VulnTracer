@@ -1,12 +1,15 @@
 :root {
     --primary: #0078d7;
+    --primary-hover: #0366d6;
     --light-bg: #f6f8fa;
     --border: #d1d5db;
     --sidebar-bg: #f3f4f6;
     --text: #111827;
     --muted: #6b7280;
+    --topbar-bg: #1e293b;
 }
 
+/* ===== Reset & Global ===== */
 * {
     box-sizing: border-box;
 }
@@ -18,13 +21,18 @@ body {
     background: #fff;
 }
 
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
 /* ===== Topbar ===== */
 .topbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #1e293b;
-    color: white;
+    background: var(--topbar-bg);
+    color: #fff;
     padding: 0 20px;
     height: 52px;
 }
@@ -38,7 +46,6 @@ body {
 
 .brand-main {
     font-size: 18px;
-    color: #fff;
 }
 
 .brand-sub {
@@ -51,28 +58,79 @@ body {
     text-decoration: none;
     margin-left: 20px;
     font-size: 14px;
+    transition: color 0.2s;
 }
 
-.topnav a.active {
+.top_nav a.active {
     color: #fff;
     font-weight: 600;
+}
+
+.top_nav a:hover {
+    color: #fff;
+}
+
+/* ===== User Area ===== */
+.user-area {
+    position: relative;
 }
 
 .user-info {
     display: flex;
     align-items: center;
     gap: 8px;
+    cursor: pointer;
 }
 
 #username {
     font-size: 14px;
+    font-weight: 500;
 }
 
 .avatar {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: white;
+    object-fit: cover;
+    border: 1px solid #ccc;
+    transition: transform 0.2s ease;
+}
+
+.avatar:hover {
+    transform: scale(1.05);
+}
+
+/* Dropdown menu */
+.user-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 46px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 150px;
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.user-menu.show {
+    display: block;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.user-menu-item {
+    display: block;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text);
+    transition: background 0.2s;
+}
+
+.user-menu-item:hover {
+    background: #f3f4f6;
 }
 
 /* ===== Layout ===== */
@@ -89,7 +147,12 @@ body {
     padding: 16px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    overflow-y: auto;
+}
+
+.menu-section + .menu-section {
+    margin-top: 20px;
 }
 
 .menu-title {
@@ -98,6 +161,7 @@ body {
     color: var(--muted);
     margin-bottom: 6px;
     font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
 .menu-item {
@@ -108,46 +172,36 @@ body {
     color: #374151;
     font-size: 14px;
     margin-bottom: 4px;
+    transition: background 0.2s, color 0.2s;
 }
 
 .menu-item.active,
 .menu-item:hover {
     background: #e5e7eb;
+    color: #111827;
 }
 
-/* News */
-.news-section {
-    margin-top: 30px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-    font-size: 12px;
-}
-
-.news-title {
-    font-weight: bold;
-    margin-bottom: 6px;
-}
-
-.news-item {
-    margin-bottom: 4px;
-    color: var(--muted);
-}
-
-.news-link {
-    display: block;
-    margin-top: 4px;
-    color: var(--primary);
-    text-decoration: none;
-}
-
-/* ===== Content ===== */
+/* ===== Content Area ===== */
 .content {
     flex: 1;
     background: #fff;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
+.content.fade {
+    opacity: 0;
+    transform: translateX(10px);
+}
+
+.content.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* ===== Content Header ===== */
 .content-header {
     display: flex;
     justify-content: space-between;
@@ -168,7 +222,13 @@ body {
     margin-left: 6px;
     border-radius: 6px;
     cursor: pointer;
-    transition: 0.2s;
+    transition: background 0.2s, transform 0.1s;
+    font-size: 14px;
+}
+
+.action-buttons .btn:hover {
+    background: #f3f4f6;
+    transform: translateY(-1px);
 }
 
 .action-buttons .btn.primary {
@@ -177,15 +237,11 @@ body {
     border-color: var(--primary);
 }
 
-.action-buttons .btn:hover {
-    background: #f3f4f6;
-}
-
 .action-buttons .btn.primary:hover {
-    background: #0366d6;
+    background: var(--primary-hover);
 }
 
-/* Empty State */
+/* ===== Empty State ===== */
 .scan-list {
     flex: 1;
     display: flex;
@@ -206,4 +262,16 @@ body {
 
 .empty-state .link:hover {
     text-decoration: underline;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
