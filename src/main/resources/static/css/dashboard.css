@@ -9,7 +9,6 @@
     --topbar-bg: #1e293b;
 }
 
-/* ===== Reset & Global ===== */
 * {
     box-sizing: border-box;
 }
@@ -68,6 +67,10 @@ a {
 
 .top_nav a:hover {
     color: #fff;
+}
+
+.hidden {
+    display: none !important;
 }
 
 /* ===== User Area ===== */
@@ -191,16 +194,6 @@ a {
     transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
-.content.fade {
-    opacity: 0;
-    transform: translateX(10px);
-}
-
-.content.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
 /* ===== Content Header ===== */
 .content-header {
     display: flex;
@@ -274,4 +267,10 @@ a {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+.fade-out {
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.25s ease;
 }
