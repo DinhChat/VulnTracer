@@ -8,18 +8,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class ScanTool {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long uId;
-    private String username;
-    private String hashedPassword;
-    private USER_ROLE role;
-    private LocalDateTime createdAt;
+    private Long toolId;
+    private String toolName;
+    private String dockerImage;
+    private String toolDescription;
+    private String defaultArgs;
 }
