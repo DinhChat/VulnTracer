@@ -1,6 +1,6 @@
 package com.hust.soict.vulntracer.controller;
 
-import com.hust.soict.vulntracer.model.Vulnerable;
+import com.hust.soict.vulntracer.model.CommonWeaknessEnumeration;
 import com.hust.soict.vulntracer.service.VulnerableService;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -19,12 +19,12 @@ public class VulnerableController {
     private VulnerableService vulnerableService;
 
     @GetMapping("/all")
-    public List<Vulnerable> getAllVulnerable() throws Exception {
+    public List<CommonWeaknessEnumeration> getAllVulnerable() throws Exception {
         return vulnerableService.getAllVulnerable();
     }
 
     @GetMapping("/{id}")
-    public Vulnerable findVulnerableById(@PathVariable String id) throws Exception {
+    public CommonWeaknessEnumeration findVulnerableById(@PathVariable String id) throws Exception {
         return vulnerableService.findVulnerableById(id);
     }
 }

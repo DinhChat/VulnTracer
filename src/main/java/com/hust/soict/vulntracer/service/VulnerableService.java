@@ -1,10 +1,10 @@
 package com.hust.soict.vulntracer.service;
 
-import com.hust.soict.vulntracer.model.Vulnerable;
+import com.hust.soict.vulntracer.model.CommonWeaknessEnumeration;
 
 import java.util.List;
 
 public interface VulnerableService {
-    Vulnerable findVulnerableById(String id) throws Exception;
-    List<Vulnerable> getAllVulnerable() throws Exception;
+    CommonWeaknessEnumeration findVulnerableById(String id) throws Exception;
+    List<CommonWeaknessEnumeration> getAllVulnerable() throws Exception;
 }

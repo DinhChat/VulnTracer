@@ -1,6 +1,6 @@
 package com.hust.soict.vulntracer.service.impl;
 
-import com.hust.soict.vulntracer.model.Vulnerable;
+import com.hust.soict.vulntracer.model.CommonWeaknessEnumeration;
 import com.hust.soict.vulntracer.repository.VulnerableRepository;
 import com.hust.soict.vulntracer.service.VulnerableService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,20 +18,20 @@ public class VulnerableServiceImpl implements VulnerableService {
     }
 
     @Override
-    public Vulnerable findVulnerableById(String id) throws Exception {
-        Vulnerable vulnerable = vulnerableRepository.findByCweId(id);
-        if (vulnerable == null) {
+    public CommonWeaknessEnumeration findVulnerableById(String id) throws Exception {
+        CommonWeaknessEnumeration commonWeaknessEnumeration = vulnerableRepository.findByCweId(id);
+        if (commonWeaknessEnumeration == null) {
             throw new Exception("Vulnerable not found");
         }
-        return vulnerable;
+        return commonWeaknessEnumeration;
     }
 
     @Override
-    public List<Vulnerable> getAllVulnerable() throws Exception {
-        List<Vulnerable> vulnerableList = vulnerableRepository.findAll();
-        if (vulnerableList.isEmpty()) {
+    public List<CommonWeaknessEnumeration> getAllVulnerable() throws Exception {
+        List<CommonWeaknessEnumeration> commonWeaknessEnumerationList = vulnerableRepository.findAll();
+        if (commonWeaknessEnumerationList.isEmpty()) {
             throw new Exception("Vulnerable not found");
         }
-        return vulnerableList;
+        return commonWeaknessEnumerationList;
     }
 }

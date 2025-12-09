@@ -15,5 +15,4 @@ public class ScanResult {
     private Long id;
     @OneToOne
     private Scan scan;
-    private String rawResult;
 }

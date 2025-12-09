@@ -3,15 +3,12 @@ package com.hust.soict.vulntracer.request;
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
-public class ScanRequest {
-    private String scanId;
+public class FromUserScanRequest {
+    private String targetName;
     private String targetUrl;
+    private String targetType;
+    private String targetDescription;
     private List<String> scanTools;
-    private String callbackUrl;
-
-    private Map<String, Object> scanParameters;
-
 }

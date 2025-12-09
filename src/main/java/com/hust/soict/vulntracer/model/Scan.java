@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -14,20 +15,18 @@ import java.time.LocalDateTime;
 public class Scan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long sId;
+    private Long scanId;
     @ManyToOne
     @JoinColumn(name = "u_id")
     private User user;
     @ManyToOne
     @JoinColumn(name = "target_id")
     private TargetApplication targetApplication;
-    @ManyToOne
-    @JoinColumn(name = "tool_id")
-    private ScanTool tool;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private SCAN_STATUS status;
-
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
+    @ElementCollection
+    private List<String> toolNames;
 }

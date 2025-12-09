@@ -1,7 +1,7 @@
 package com.hust.soict.vulntracer.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hust.soict.vulntracer.model.Vulnerable;
+import com.hust.soict.vulntracer.model.CommonWeaknessEnumeration;
 import com.hust.soict.vulntracer.repository.VulnerableRepository;
 import com.hust.soict.vulntracer.service.CweImportService;
 import jakarta.transaction.Transactional;
@@ -36,7 +36,7 @@ public class CweImportServiceImpl implements CweImportService {
 
         XMLStreamReader reader = factory.createXMLStreamReader(is);
 
-        List<Vulnerable> buffer = new ArrayList<>();
+        List<CommonWeaknessEnumeration> buffer = new ArrayList<>();
         final int BATCH = 200;
         int imported = 0;
 
@@ -100,7 +100,7 @@ public class CweImportServiceImpl implements CweImportService {
                     String example = elementText.getOrDefault("Demonstrative_Example", null);
                     String relatedJson = relatedList.isEmpty() ? null : objectMapper.writeValueAsString(relatedList);
 
-                    Vulnerable v = new Vulnerable();
+                    CommonWeaknessEnumeration v = new CommonWeaknessEnumeration();
                     v.setCweId(cweId);
                     v.setCweNum(cweNum);
                     v.setCweName(name);

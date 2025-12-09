@@ -13,30 +13,23 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Vulnerable {
+public class CommonWeaknessEnumeration {
     @Id
     private String cweId;
     private Integer cweNum;
     private String cweName;
-
     @Column(columnDefinition = "TEXT")
     private String shortDescription;
-
     @Column(columnDefinition = "LONGTEXT")
     private String extendedDescription;
-
     @Column(columnDefinition = "TEXT")
     private String likelihood;
-
     @Column(columnDefinition = "TEXT")
     private String notes;
-
     @Column(columnDefinition = "TEXT")
     private String related;
-
     @Column(columnDefinition = "LONGTEXT")
     private String example;
-
     private String sourceFile;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

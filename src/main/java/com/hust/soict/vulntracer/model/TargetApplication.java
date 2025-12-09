@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 @AllArgsConstructor
@@ -18,6 +20,6 @@ public class TargetApplication {
     private String applicationType;
     private String applicationStatus;
     private String applicationDescription;
-    private String applicationCreatedAt;
-    private String applicationUpdatedAt;
+    private LocalDateTime applicationCreatedAt;
+    private LocalDateTime applicationUpdatedAt;
 }
