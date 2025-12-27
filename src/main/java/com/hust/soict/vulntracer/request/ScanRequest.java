@@ -11,7 +11,5 @@ public class ScanRequest {
     private String targetUrl;
     private List<String> scanTools;
     private String callbackUrl;
-
     private Map<String, Object> scanParameters;
-
 }

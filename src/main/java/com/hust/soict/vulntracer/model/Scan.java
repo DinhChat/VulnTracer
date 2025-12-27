@@ -20,8 +20,8 @@ public class Scan {
     @JoinColumn(name = "u_id")
     private User user;
     @ManyToOne
-    @JoinColumn(name = "target_id")
-    private TargetApplication targetApplication;
+    @JoinColumn(name = "application_id")
+    private Application application;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private SCAN_STATUS status;

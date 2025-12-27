@@ -11,10 +11,10 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class TargetApplication {
+public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long targetId;
+    private Long applicationId;
     private String applicationUrl;
     private String applicationName;
     private String applicationType;
@@ -22,4 +22,5 @@ public class TargetApplication {
     private String applicationDescription;
     private LocalDateTime applicationCreatedAt;
     private LocalDateTime applicationUpdatedAt;
+    private LocalDateTime lastScannedAt;
 }

@@ -1,8 +1,8 @@
 package com.hust.soict.vulntracer.service;
 
 import com.hust.soict.vulntracer.model.Scan;
-import com.hust.soict.vulntracer.request.FromUserScanRequest;
+import com.hust.soict.vulntracer.request.CreateScanRequest;
 
 public interface ScanService {
-    Scan createScan(FromUserScanRequest request) throws Exception;
+    Scan createScan(CreateScanRequest request) throws Exception;
 }
