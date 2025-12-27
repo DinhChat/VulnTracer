@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ScanRepository extends JpaRepository<Scan, Long> {
     List<Scan> findByApplication_ApplicationId(Long targetId);
+    List<Scan> findByUser_UserId(Long userId);
 }

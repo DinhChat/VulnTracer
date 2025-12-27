@@ -15,6 +15,9 @@ public class Application {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long applicationId;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
     private String applicationUrl;
     private String applicationName;
     private String applicationType;

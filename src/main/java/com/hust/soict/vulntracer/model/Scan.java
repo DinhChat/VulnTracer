@@ -17,7 +17,7 @@ public class Scan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long scanId;
     @ManyToOne
-    @JoinColumn(name = "u_id")
+    @JoinColumn(name = "user_id")
     private User user;
     @ManyToOne
     @JoinColumn(name = "application_id")
