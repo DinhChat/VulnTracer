@@ -8,46 +8,46 @@ import com.hust.soict.vulntracer.repository.ScanRepository;
 import com.hust.soict.vulntracer.repository.ApplicationRepository;
 import com.hust.soict.vulntracer.repository.UserRepository;
 import com.hust.soict.vulntracer.request.CreateScanRequest;
+import com.hust.soict.vulntracer.request.ScanToolRequest;
 import com.hust.soict.vulntracer.response.ScanResponse;
+import com.hust.soict.vulntracer.service.ScanDispatcherService;
 import com.hust.soict.vulntracer.service.ScanService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ScanServiceImpl implements ScanService {
     private final ScanRepository scanRepository;
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
+    private final ScanDispatcherService scanDispatcherService;
 
     @Autowired
     public ScanServiceImpl(
             ScanRepository scanRepository,
             UserRepository userRepository,
-            ApplicationRepository applicationRepository
+            ApplicationRepository applicationRepository,
+            ScanDispatcherService scanDispatcherService
     ) {
         this.scanRepository = scanRepository;
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
+        this.scanDispatcherService = scanDispatcherService;
     }
 
 
     @Override
-    public Scan createScan(CreateScanRequest request) throws ResponseStatusException {
+    public ScanResponse  createScan(CreateScanRequest request, String username) throws ResponseStatusException {
         if (request == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "request is null");
         }
-        String username = SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getName();
         User user = userRepository.findByUsername(username);
         if (user == null) {
             throw new ResponseStatusException(
@@ -56,31 +56,44 @@ public class ScanServiceImpl implements ScanService {
             );
         }
 
-        Application target = applicationRepository.findByApplicationUrl(request.getApplicationUrl());
-        if (target == null) {
-            target = new Application();
-            target.setApplicationUrl(request.getApplicationUrl());
-            target.setApplicationName(request.getApplicationName());
-            target.setApplicationType(request.getApplicationType());
-            target.setApplicationDescription(request.getApplicationDescription());
-            target.setApplicationStatus("NEW");
-            target.setApplicationCreatedAt(LocalDateTime.now());
-            target.setApplicationUpdatedAt(LocalDateTime.now());
+        Application application  = applicationRepository.findByApplicationUrl(request.getApplicationUrl());
+        if (application  == null) {
+            application = new Application();
+            application.setUser(user);
+            application.setApplicationUrl(request.getApplicationUrl());
+            application.setApplicationName(request.getApplicationName());
+            application.setApplicationType(request.getApplicationType());
+            application.setApplicationDescription(request.getApplicationDescription());
+            application.setApplicationStatus("NEW");
+            application.setApplicationCreatedAt(LocalDateTime.now());
+            application.setApplicationUpdatedAt(LocalDateTime.now());
 
-            target = applicationRepository.save(target);
+            application = applicationRepository.save(application);
         }
 
         Scan scan = new Scan();
         scan.setUser(user);
-        scan.setApplication(target);
+        scan.setApplication(application);
         scan.setStatus(SCAN_STATUS.PENDING);
         scan.setCreateAt(LocalDateTime.now());
         scan.setUpdateAt(LocalDateTime.now());
         scan.setStartTime(LocalDateTime.now());
-        scan.setToolNames(request.getScanTools());
 
-        //        executeScanOnRails(savedScan);
-        return scanRepository.save(scan);
+        List<String> toolNames = request.getScanTools()
+                .stream()
+                .map(ScanToolRequest::getName)
+                .toList();
+
+        scan.setScanTools(toolNames);
+        scan = scanRepository.save(scan);
+        ScanResponse scanResponse = scanDispatcherService.sendToScanService(scan);
+
+        scan.setStatus(scanResponse.getStatus());
+        scan.setStartTime(scanResponse.getQueuedAt());
+        scan.setUpdateAt(LocalDateTime.now());
+        scanRepository.save(scan);
+
+        return toScanResponse(scan);
     }
 
     @Override
@@ -106,7 +119,7 @@ public class ScanServiceImpl implements ScanService {
     }
 
     @Override
-    public ScanResponse addScan(Long applicationId, String username) throws ResponseStatusException {
+    public ScanResponse addScan(Long applicationId, CreateScanRequest request, String username) throws ResponseStatusException {
         User user = userRepository.findByUsername(username);
         if (user == null) {
             throw new ResponseStatusException(
@@ -119,12 +132,24 @@ public class ScanServiceImpl implements ScanService {
                 "Application not found"
         );
         Scan scan = new Scan();
+        scan.setUser(user);
         scan.setApplication(application);
         scan.setStatus(SCAN_STATUS.PENDING);
-        scan.setUser(user);
         scan.setCreateAt(LocalDateTime.now());
+        List<String> toolNames = request.getScanTools()
+                .stream()
+                .map(ScanToolRequest::getName)
+                .toList();
 
+        scan.setScanTools(toolNames);
+        scan = scanRepository.save(scan);
+        ScanResponse scanResponse = scanDispatcherService.sendToScanService(scan);
+
+        scan.setStatus(scanResponse.getStatus());
+        scan.setStartTime(scanResponse.getQueuedAt());
+        scan.setUpdateAt(LocalDateTime.now());
         scanRepository.save(scan);
+
         return toScanResponse(scan);
     }
 

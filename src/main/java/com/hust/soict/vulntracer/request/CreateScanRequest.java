@@ -6,10 +6,9 @@ import java.util.List;
 
 @Data
 public class CreateScanRequest {
-    private Long applicationId;
+    private List<ScanToolRequest> scanTools;
     private String applicationUrl;
     private String applicationName;
     private String applicationType;
     private String applicationDescription;
-    private List<String> scanTools;
 }

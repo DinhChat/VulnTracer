@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -27,6 +28,11 @@ public class Scan {
     private SCAN_STATUS status;
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
-    @ElementCollection
-    private List<String> toolNames;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "scan_tools",
+            joinColumns = @JoinColumn(name = "scan_id")
+    )
+    @Column(name = "tool_name")
+    private List<String> scanTools = new ArrayList<>();
 }

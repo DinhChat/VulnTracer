@@ -1,9 +1,6 @@
 package com.hust.soict.vulntracer.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,8 +13,7 @@ public class ScanTool {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long toolId;
+    @Column(unique = true, nullable = false)
     private String toolName;
-    private String dockerImage;
     private String toolDescription;
-    private String defaultArgs;
 }

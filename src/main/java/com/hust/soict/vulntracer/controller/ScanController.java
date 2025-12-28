@@ -1,5 +1,6 @@
 package com.hust.soict.vulntracer.controller;
 
+import com.hust.soict.vulntracer.request.CreateScanRequest;
 import com.hust.soict.vulntracer.response.ScanResponse;
 import com.hust.soict.vulntracer.service.ScanService;
 import org.springframework.http.HttpStatus;
@@ -20,8 +21,13 @@ public class ScanController {
     }
 
     @PostMapping
-    public ScanResponse createScan() {
-        return null;
+    public ResponseEntity<ScanResponse> createScan(
+            @RequestBody CreateScanRequest request,
+            Authentication authentication
+    ) {
+        String username = authentication.getName();
+        ScanResponse response = scanService.createScan(request, username);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/application/{applicationId}")
@@ -42,10 +48,11 @@ public class ScanController {
     @PostMapping("/application/{applicationId}")
     public ResponseEntity<ScanResponse> addScan(
             @PathVariable Long applicationId,
+            @RequestBody CreateScanRequest request,
             Authentication authentication
             ) {
         String username = authentication.getName();
-        ScanResponse res = scanService.addScan(applicationId, username);
+        ScanResponse res = scanService.addScan(applicationId, request, username);
         return new ResponseEntity<>(res, HttpStatus.CREATED);
     }
 }

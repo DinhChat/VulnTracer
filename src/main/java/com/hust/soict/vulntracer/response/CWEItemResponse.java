@@ -1,27 +1,21 @@
-package com.hust.soict.vulntracer.model;
+package com.hust.soict.vulntracer.response;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CommonWeaknessEnumeration {
-    @Id
+public class CWEItemResponse {
     private String cweId;
     private Integer cweNum;
     private String cweName;
     @Column(columnDefinition = "TEXT")
     private String shortDescription;
-    @Column(columnDefinition = "LONGTEXT")
-    private String extendedDescription;
     @Column(columnDefinition = "TEXT")
     private String likelihood;
     @Column(columnDefinition = "TEXT")
