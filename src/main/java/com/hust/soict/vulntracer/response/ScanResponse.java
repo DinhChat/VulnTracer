@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Data
 public class ScanResponse {
     @JsonProperty("scan_id")
-    private Long scanId;
+    private String scanId;
     private SCAN_STATUS status;
     private String message;
     @JsonProperty("queued_at")

@@ -155,7 +155,7 @@ public class ScanServiceImpl implements ScanService {
 
     private ScanResponse toScanResponse(Scan scan) {
         ScanResponse scanResponse = new ScanResponse();
-        scanResponse.setScanId(scan.getScanId());
+        scanResponse.setScanId(scan.getScanId().toString());
         scanResponse.setStatus(scan.getStatus());
         scanResponse.setQueuedAt(scan.getCreateAt());
 
