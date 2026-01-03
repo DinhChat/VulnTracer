@@ -24,10 +24,14 @@ public class Scan {
     @JoinColumn(name = "application_id")
     private Application application;
     private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private LocalDateTime completedAt;
     private SCAN_STATUS status;
-    private LocalDateTime createAt;
-    private LocalDateTime updateAt;
+    private Integer total;
+    private Integer critical;
+    private Integer high;
+    private Integer medium;
+    private Integer low;
+    private Integer info;
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
             name = "scan_tools",

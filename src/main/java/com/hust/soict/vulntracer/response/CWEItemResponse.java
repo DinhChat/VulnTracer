@@ -17,13 +17,7 @@ public class CWEItemResponse {
     @Column(columnDefinition = "TEXT")
     private String shortDescription;
     @Column(columnDefinition = "TEXT")
-    private String likelihood;
-    @Column(columnDefinition = "TEXT")
-    private String notes;
-    @Column(columnDefinition = "TEXT")
     private String related;
-    @Column(columnDefinition = "LONGTEXT")
-    private String example;
     private String sourceFile;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

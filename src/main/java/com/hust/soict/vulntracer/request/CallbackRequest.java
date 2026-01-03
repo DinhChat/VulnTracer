@@ -1,4 +1,4 @@
-package com.hust.soict.vulntracer.response;
+package com.hust.soict.vulntracer.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
@@ -7,16 +7,17 @@ import java.util.List;
 import java.util.Map;
 
 @Data
-public class CallbackResponse {
-    private String scanId;
+public class CallbackRequest {
+    private Long scanId;
     private String status;
     private String completedAt;
 
-    private Map<String, ToolResultDto> results;
+    private Map<String, NucleiResultDto> results;
 
     @Data
-    public static class ToolResultDto {
+    public static class NucleiResultDto {
         private String status;
+        private String error;
         private SummaryDto summary;
         @JsonProperty("target_updates")
         private TargetUpdateDto targetUpdates;
@@ -56,7 +57,7 @@ public class CallbackResponse {
         @JsonProperty("matched_at")
         private String matchedAt;
         @JsonProperty("cwe_ids")
-        private List<Integer> cweIds;
+        private List<String> cweIds;
         private List<String> references;
 
         private EvidenceDto evidence;

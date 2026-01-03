@@ -1,5 +1,6 @@
 package com.hust.soict.vulntracer.controller;
 
+import com.hust.soict.vulntracer.request.CallbackRequest;
 import com.hust.soict.vulntracer.request.CreateScanRequest;
 import com.hust.soict.vulntracer.response.ScanResponse;
 import com.hust.soict.vulntracer.service.ScanService;
@@ -54,5 +55,11 @@ public class ScanController {
         String username = authentication.getName();
         ScanResponse res = scanService.addScan(applicationId, request, username);
         return new ResponseEntity<>(res, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/callback")
+    public ResponseEntity<?> handleCallback(@RequestBody CallbackRequest req) {
+        scanService.handleCallback(req);
+        return ResponseEntity.ok().build();
     }
 }

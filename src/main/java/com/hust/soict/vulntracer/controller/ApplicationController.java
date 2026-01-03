@@ -11,7 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/target")
+@RequestMapping("/application")
 public class ApplicationController {
     private final ApplicationService applicationService;
 

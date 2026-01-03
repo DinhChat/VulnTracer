@@ -1,23 +1,22 @@
 package com.hust.soict.vulntracer.service.impl;
 
-import com.hust.soict.vulntracer.model.SCAN_STATUS;
-import com.hust.soict.vulntracer.model.Scan;
-import com.hust.soict.vulntracer.model.Application;
-import com.hust.soict.vulntracer.model.User;
-import com.hust.soict.vulntracer.repository.ScanRepository;
-import com.hust.soict.vulntracer.repository.ApplicationRepository;
-import com.hust.soict.vulntracer.repository.UserRepository;
+import com.hust.soict.vulntracer.model.*;
+import com.hust.soict.vulntracer.repository.*;
+import com.hust.soict.vulntracer.request.CallbackRequest;
 import com.hust.soict.vulntracer.request.CreateScanRequest;
 import com.hust.soict.vulntracer.request.ScanToolRequest;
 import com.hust.soict.vulntracer.response.ScanResponse;
 import com.hust.soict.vulntracer.service.ScanDispatcherService;
 import com.hust.soict.vulntracer.service.ScanService;
+import jakarta.transaction.Transactional;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -26,18 +25,30 @@ public class ScanServiceImpl implements ScanService {
     private final UserRepository userRepository;
     private final ApplicationRepository applicationRepository;
     private final ScanDispatcherService scanDispatcherService;
+    private final NucleiFindingRepository nucleiFindingRepository;
+    private final CWERepository cweRepository;
+    private final NucleiFindingCweRepository nucleiFindingCweRepository;
+    private final NucleiEvidenceRepository nucleiEvidenceRepository;
 
     @Autowired
     public ScanServiceImpl(
             ScanRepository scanRepository,
             UserRepository userRepository,
             ApplicationRepository applicationRepository,
-            ScanDispatcherService scanDispatcherService
+            ScanDispatcherService scanDispatcherService,
+            NucleiFindingRepository nucleiFindingRepository,
+            CWERepository cweRepository,
+            NucleiFindingCweRepository nucleiFindingCweRepository,
+            NucleiEvidenceRepository nucleiEvidenceRepository
     ) {
         this.scanRepository = scanRepository;
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.scanDispatcherService = scanDispatcherService;
+        this.nucleiFindingRepository = nucleiFindingRepository;
+        this.cweRepository = cweRepository;
+        this.nucleiFindingCweRepository = nucleiFindingCweRepository;
+        this.nucleiEvidenceRepository = nucleiEvidenceRepository;
     }
 
 
@@ -75,25 +86,9 @@ public class ScanServiceImpl implements ScanService {
         scan.setUser(user);
         scan.setApplication(application);
         scan.setStatus(SCAN_STATUS.PENDING);
-        scan.setCreateAt(LocalDateTime.now());
-        scan.setUpdateAt(LocalDateTime.now());
         scan.setStartTime(LocalDateTime.now());
 
-        List<String> toolNames = request.getScanTools()
-                .stream()
-                .map(ScanToolRequest::getName)
-                .toList();
-
-        scan.setScanTools(toolNames);
-        scan = scanRepository.save(scan);
-        ScanResponse scanResponse = scanDispatcherService.sendToScanService(scan);
-
-        scan.setStatus(scanResponse.getStatus());
-        scan.setStartTime(scanResponse.getQueuedAt());
-        scan.setUpdateAt(LocalDateTime.now());
-        scanRepository.save(scan);
-
-        return toScanResponse(scan);
+        return getScanResponse(request, scan);
     }
 
     @Override
@@ -135,7 +130,84 @@ public class ScanServiceImpl implements ScanService {
         scan.setUser(user);
         scan.setApplication(application);
         scan.setStatus(SCAN_STATUS.PENDING);
-        scan.setCreateAt(LocalDateTime.now());
+        return getScanResponse(request, scan);
+    }
+
+    @Override
+    @Transactional
+    public void handleCallback(CallbackRequest req) throws ResponseStatusException {
+        Scan scan = scanRepository.findById(req.getScanId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Scan not found"));
+        scan.setStatus(SCAN_STATUS.valueOf(req.getStatus()));
+        scan.setCompletedAt(parseTime(req.getCompletedAt()));
+
+        CallbackRequest.NucleiResultDto nuclei = req.getResults() != null
+                ? req.getResults().get("nuclei")
+                : null;
+
+        if (nuclei != null) {
+            if (nuclei.getSummary() != null) {
+                scan.setTotal(nuclei.getSummary().getTotal());
+                scan.setCritical(nuclei.getSummary().getCritical());
+                scan.setHigh(nuclei.getSummary().getHigh());
+                scan.setMedium(nuclei.getSummary().getMedium());
+                scan.setLow(nuclei.getSummary().getLow());
+                scan.setInfo(nuclei.getSummary().getInfo());
+            }
+        }
+
+        assert nuclei != null;
+        if (nuclei.getVulnerabilities() != null) {
+            for (CallbackRequest.VulnerabilityDto vuln : nuclei.getVulnerabilities()) {
+
+                NucleiFinding finding = new NucleiFinding();
+                finding.setScan(scan);
+                finding.setTemplateId(vuln.getTemplate_id());
+                finding.setName(vuln.getName());
+                finding.setSeverity(vuln.getSeverity());
+                finding.setDescription(vuln.getDescription());
+                finding.setMatchedAt(vuln.getMatchedAt());
+
+                finding = nucleiFindingRepository.save(finding);
+
+                if (vuln.getCweIds() != null && !vuln.getCweIds().isEmpty()) {
+                    for (String cweId : vuln.getCweIds()) {
+                        CWE cwe = cweRepository.findById(cweId).orElse(null);
+                        if (cwe != null) {
+                            NucleiFindingCWE mapping = new NucleiFindingCWE();
+                            mapping.setFinding(finding);
+                            mapping.setCwe(cwe);
+                            nucleiFindingCweRepository.save(mapping);
+                        }
+                    }
+                }
+
+                // --- Evidence ---
+                if (vuln.getEvidence() != null) {
+                    NucleiEvidence evidence = new NucleiEvidence();
+                    evidence.setNucleiFinding(finding);
+                    evidence.setType(vuln.getEvidence().getType());
+                    evidence.setCommand(vuln.getEvidence().getCommand());
+                    evidence.setResources(vuln.getEvidence().getResources());
+
+                    nucleiEvidenceRepository.save(evidence);
+                }
+            }
+        }
+
+        scanRepository.save(scan);
+    }
+
+    private LocalDateTime parseTime(String completedAt) {
+        if (completedAt == null) return null;
+        return OffsetDateTime.parse(completedAt).toLocalDateTime();
+    }
+
+
+    @NonNull
+    private ScanResponse getScanResponse(CreateScanRequest request, Scan scan) {
         List<String> toolNames = request.getScanTools()
                 .stream()
                 .map(ScanToolRequest::getName)
@@ -146,8 +218,8 @@ public class ScanServiceImpl implements ScanService {
         ScanResponse scanResponse = scanDispatcherService.sendToScanService(scan);
 
         scan.setStatus(scanResponse.getStatus());
-        scan.setStartTime(scanResponse.getQueuedAt());
-        scan.setUpdateAt(LocalDateTime.now());
+        scan.setStartTime(LocalDateTime.now());
+        scan.setStatus(scanResponse.getStatus());
         scanRepository.save(scan);
 
         return toScanResponse(scan);
@@ -157,8 +229,7 @@ public class ScanServiceImpl implements ScanService {
         ScanResponse scanResponse = new ScanResponse();
         scanResponse.setScanId(scan.getScanId().toString());
         scanResponse.setStatus(scan.getStatus());
-        scanResponse.setQueuedAt(scan.getCreateAt());
-
+        scanResponse.setStartedAt(scan.getStartTime());
         return scanResponse;
     }
 }
