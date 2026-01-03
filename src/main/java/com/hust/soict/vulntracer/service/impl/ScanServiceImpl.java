@@ -5,8 +5,9 @@ import com.hust.soict.vulntracer.repository.*;
 import com.hust.soict.vulntracer.request.CallbackRequest;
 import com.hust.soict.vulntracer.request.CreateScanRequest;
 import com.hust.soict.vulntracer.request.ScanToolRequest;
-import com.hust.soict.vulntracer.response.ScanResponse;
+import com.hust.soict.vulntracer.response.*;
 import com.hust.soict.vulntracer.service.ScanDispatcherService;
+import com.hust.soict.vulntracer.service.ScanResultMapper;
 import com.hust.soict.vulntracer.service.ScanService;
 import jakarta.transaction.Transactional;
 import lombok.NonNull;
@@ -184,7 +185,6 @@ public class ScanServiceImpl implements ScanService {
                     }
                 }
 
-                // --- Evidence ---
                 if (vuln.getEvidence() != null) {
                     NucleiEvidence evidence = new NucleiEvidence();
                     evidence.setNucleiFinding(finding);
@@ -198,6 +198,24 @@ public class ScanServiceImpl implements ScanService {
         }
 
         scanRepository.save(scan);
+    }
+
+    @Override
+    public ScanResultResponse getScanResult(Long scanId, String username) throws ResponseStatusException {
+        Scan scan = scanRepository.findById(scanId)
+                .orElseThrow(() -> new RuntimeException("Scan not found"));
+
+        if (!scan.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("Forbidden");
+        }
+        List<NucleiFinding> findings =
+                nucleiFindingRepository.findByScan(scan);
+        List<NucleiFindingResponse> findingResponses =
+                findings.stream()
+                        .map(this::mapFinding)
+                        .toList();
+
+        return ScanResultMapper.toResponse(scan, findingResponses);
     }
 
     private LocalDateTime parseTime(String completedAt) {
@@ -231,5 +249,47 @@ public class ScanServiceImpl implements ScanService {
         scanResponse.setStatus(scan.getStatus());
         scanResponse.setStartedAt(scan.getStartTime());
         return scanResponse;
+    }
+
+    private NucleiFindingResponse mapFinding(NucleiFinding finding) {
+
+        NucleiFindingResponse res = new NucleiFindingResponse();
+
+        res.setId(finding.getNucleiFindingId());
+        res.setTemplateId(finding.getTemplateId());
+        res.setName(finding.getName());
+        res.setSeverity(finding.getSeverity());
+//        res.setDescription(finding.getDescription());
+        res.setMatchedAt(finding.getMatchedAt());
+
+//        List<NucleiEvidenceResponse> evidences =
+//                nucleiEvidenceRepository.findByNucleiFinding(finding)
+//                        .stream()
+//                        .map(ev -> {
+//                            NucleiEvidenceResponse e = new NucleiEvidenceResponse();
+//                            e.setType(ev.getType());
+//                            e.setCommand(ev.getCommand());
+//                            e.setResources(ev.getResources());
+//                            return e;
+//                        })
+//                        .toList();
+//
+//        res.setEvidences(evidences);
+//
+//        List<CWEResponse> cwes =
+//                nucleiFindingCweRepository.findByFinding(finding)
+//                        .stream()
+//                        .map(fc -> {
+//                            CWEResponse c = new CWEResponse();
+//                            c.setCweId(fc.getCwe().getCweId());
+//                            c.setName(fc.getCwe().getCweName());
+//                            c.setDescription(fc.getCwe().getShortDescription());
+//                            return c;
+//                        })
+//                        .toList();
+//
+//        res.setCwes(cwes);
+
+        return res;
     }
 }

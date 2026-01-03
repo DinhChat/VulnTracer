@@ -7,6 +7,7 @@ import com.hust.soict.vulntracer.repository.UserRepository;
 import com.hust.soict.vulntracer.request.CreateApplicationRequest;
 import com.hust.soict.vulntracer.response.ApplicationResponse;
 import com.hust.soict.vulntracer.service.ApplicationService;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -45,6 +46,17 @@ public class ApplicationServiceImpl implements ApplicationService {
         Application createdApplication = applicationRepository.save(application);
 
         return toAPplicationResponse(createdApplication);
+    }
+
+    @Override
+    public ApplicationResponse getApplication(Long applicationId, String username) throws ResponseStatusException {
+        User user = userRepository.findByUsername(username);
+        Application application = applicationRepository.findByApplicationId(applicationId);
+        if(application == null || application.getUser() != user) throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "not found application"
+        );
+        return toAPplicationResponse(application);
     }
 
     private ApplicationResponse toAPplicationResponse(Application application) {

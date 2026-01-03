@@ -25,6 +25,7 @@ public class Scan {
     private Application application;
     private LocalDateTime startTime;
     private LocalDateTime completedAt;
+    private String message;
     private SCAN_STATUS status;
     private Integer total;
     private Integer critical;

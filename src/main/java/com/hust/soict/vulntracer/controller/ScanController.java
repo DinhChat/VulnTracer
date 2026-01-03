@@ -3,11 +3,13 @@ package com.hust.soict.vulntracer.controller;
 import com.hust.soict.vulntracer.request.CallbackRequest;
 import com.hust.soict.vulntracer.request.CreateScanRequest;
 import com.hust.soict.vulntracer.response.ScanResponse;
+import com.hust.soict.vulntracer.response.ScanResultResponse;
 import com.hust.soict.vulntracer.service.ScanService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -62,4 +64,15 @@ public class ScanController {
         scanService.handleCallback(req);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/{scanId}")
+    public ResponseEntity<ScanResultResponse> getScanResult(
+            @PathVariable Long scanId,
+            Authentication authentication
+    ) throws ResponseStatusException {
+        String username = authentication.getName();
+        ScanResultResponse response = scanService.getScanResult(scanId, username);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 }

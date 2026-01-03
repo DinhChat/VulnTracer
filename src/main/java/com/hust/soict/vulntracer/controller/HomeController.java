@@ -27,4 +27,9 @@ public class HomeController {
     public String register() {
         return "register";
     }
+
+    @GetMapping("/scan-detail/{id}")
+    public String getScanDetail(@PathVariable Long id) {
+        return "scan-detail";
+    }
 }

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan Details - VulnTracer</title>
+  <!-- CSS Chung -->
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <!-- CSS Riêng cho trang này -->
+  <link rel="stylesheet" href="/css/scan-detail.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Script Logic -->
+  <script defer src="/script/scan-detail.js"></script>
+</head>
+<body>
+
+<!-- TOPBAR (Giống Dashboard) -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="brand">
+      <span class="brand-main">VulnTracer</span>
+      <span class="brand-sub">Scan Report</span>
+    </a>
+  </div>
+  <div class="topbar-right">
+    <div class="user-info">
+      <span id="username">Loading...</span>
+      <img src="https://ui-avatars.com/api/?name=User" class="avatar" id="avatar">
+    </div>
+  </div>
+</header>
+
+<div class="report-container">
+  <!-- HEADER & BACK BUTTON -->
+  <div class="report-header">
+    <a href="/" class="btn-back">← Back to Dashboard</a>
+    <h1 id="pageTitle">Scan Report #...</h1>
+  </div>
+
+  <!-- TOP SECTION: INFO & CHART -->
+  <div class="overview-grid">
+    <!-- 1. General Info Card -->
+    <div class="card info-card">
+      <h3>Scan Information</h3>
+      <div class="info-row">
+        <span class="label">Application:</span>
+        <span class="value" id="appName">Loading...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Status:</span>
+        <span class="value" id="scanStatus">...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Start Time:</span>
+        <span class="value" id="startTime">...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Completed At:</span>
+        <span class="value" id="completedTime">...</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Duration:</span>
+        <span class="value" id="duration">...</span>
+      </div>
+    </div>
+
+    <!-- 2. Summary Chart -->
+    <div class="card chart-card">
+      <h3>Vulnerability Summary</h3>
+      <div class="chart-wrapper">
+        <canvas id="summaryChart"></canvas>
+      </div>
+      <div class="chart-legend" id="chartLegend">
+        <!-- Legend items rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM SECTION: VULNERABILITY LIST -->
+  <div class="vuln-section">
+    <div class="section-header">
+      <h2>Findings</h2>
+      <div class="search-box">
+        <input type="text" id="vulnSearch" placeholder="Search vulnerability name...">
+      </div>
+    </div>
+
+    <div class="vuln-list-container">
+      <table class="vuln-table">
+        <thead>
+        <tr>
+          <th width="10%">Severity</th>
+          <th width="40%">Name</th>
+          <th width="30%">Matched At</th>
+          <th width="20%">Template ID</th>
+        </tr>
+        </thead>
+        <tbody id="vulnTableBody">
+        <!-- JS will render rows here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE-OVER DRAWER (Chi tiết Vulnerability) -->
+<div id="vulnDrawer" class="drawer hidden">
+  <div class="drawer-overlay" id="drawerOverlay"></div>
+  <div class="drawer-content">
+    <div class="drawer-header">
+      <h2 id="drawerTitle">Vulnerability Name</h2>
+      <button class="close-drawer" id="closeDrawer">&times;</button>
+    </div>
+    <div class="drawer-body">
+      <!-- Severity Badge -->
+      <div id="drawerSeverity" class="badge-large">High</div>
+
+      <!-- Metadata -->
+      <div class="detail-group">
+        <label>Template ID:</label>
+        <span id="drawerTemplateId">...</span>
+      </div>
+      <div class="detail-group">
+        <label>Matched At:</label>
+        <a href="#" target="_blank" id="drawerUrl">...</a>
+      </div>
+
+      <hr>
+
+      <!-- Placeholder for future details (Description, Evidence, CWE) -->
+      <div class="detail-group">
+        <label>CWEs:</label>
+        <div id="drawerCweList" class="cwe-tags">
+          <!-- e.g. <span class="cwe-tag">CWE-79</span> -->
+          <span style="color:#999; font-style:italic">Loading details...</span>
+        </div>
+      </div>
+
+      <div class="detail-group">
+        <label>Description:</label>
+        <p id="drawerDesc">Fetching detailed description...</p>
+      </div>
+
+      <div class="detail-group">
+        <label>Evidence / Extractor:</label>
+        <pre id="drawerEvidence">No evidence data available yet.</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

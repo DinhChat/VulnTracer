@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface ApplicationService {
     List<ApplicationResponse> getAllApplication(String username) throws ResponseStatusException;
-    ApplicationResponse createApplication(CreateApplicationRequest request) throws Exception;
+    ApplicationResponse createApplication(CreateApplicationRequest request) throws ResponseStatusException;
+    ApplicationResponse getApplication(Long applicationId, String username) throws ResponseStatusException;
 }

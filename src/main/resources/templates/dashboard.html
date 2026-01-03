@@ -1,102 +1,168 @@
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vulnerable Tracer</title>
-    <link rel="stylesheet" href="/css/dashboard.css" />
-    <script defer src="/script/dashboard.js"></script>
-</head>
-<body>
-<header class="topbar">
-    <div class="topbar-left">
-        <div class="brand">
-            <span class="brand-main">VulnTracer</span>
-            <span class="brand-sub">Web application scanner</span>
-        </div>
-        <nav class="top_nav">
-            <a href="#" class="active">Scans</a>
-            <a href="#">Settings</a>
-        </nav>
-    </div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Vulnerable Tracer</title>
+        <link rel="stylesheet" href="/css/dashboard.css" />
+        <script defer src="/script/dashboard.js"></script>
+    </head>
+    <body>
+        <header class="topbar">
+            <div class="topbar-left">
+                <div class="brand">
+                    <span class="brand-main">VulnTracer</span>
+                    <span class="brand-sub">Web application scanner</span>
+                </div>
+                <nav class="top_nav">
+                    <a href="#" class="active">Scans</a>
+                    <a href="#">Settings</a>
+                </nav>
+            </div>
 
-    <div class="topbar-right">
-        <div class="user-area">
-            <div class="user-info" id="userSection">
-                <span id="username"></span>
-                <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="User" class="avatar" id="avatar" />
-                <div class="user-menu" id="userMenu">
-                    <a href="/profile" class="user-menu-item">Profile</a>
-                    <a href="#" id="logoutBtn" class="user-menu-item">Logout</a>
+            <div class="topbar-right">
+                <div class="user-area">
+                    <div class="user-info" id="userSection">
+                        <span id="username">Loading...</span>
+                        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="User" class="avatar" id="avatar" />
+                        <div class="user-menu" id="userMenu">
+                            <a href="/profile" class="user-menu-item">Profile</a>
+                            <a href="#" id="logoutBtn" class="user-menu-item">Logout</a>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-</header>
+        </header>
 
-<div class="layout" >
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="menu-section">
-            <div class="menu-title">FOLDERS</div>
-            <a href="#" class="menu-item active" data-section="myScans">My Scans</a>
-            <a href="#" class="menu-item" data-section="allScans">All Scans</a>
-            <a href="#" class="menu-item" data-section="trash">Trash</a>
+        <div class="layout" id="scanLayout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="menu-section">
+                    <div class="menu-title">ASSETS</div>
+                    <a href="#" class="menu-item active" data-section="myScans">My Scans</a>
+                    <a href="#" class="menu-item" data-section="allApplications">All Applications</a>
+                    <a href="#" class="menu-item" data-section="trash">Trash</a>
+                </div>
+                <div class="menu-section">
+                    <div class="menu-title">RESOURCES</div>
+                    <a href="#" class="menu-item" data-section="policies">Policies</a>
+                    <a href="#" class="menu-item" data-section="pluginRules">Plugin Rules</a>
+                </div>
+            </aside>
+
+            <main class="content" id="mainContent">
+                <div class="content-header">
+                    <h2 id="sectionTitle">My Scans</h2>
+                    <div class="action-buttons">
+                        <button class="btn">Import</button>
+                        <button class="btn">New Application</button>
+                        <button id="btnOpenScan" class="btn primary">+ New Scan</button>
+                    </div>
+                </div>
+
+                <div class="content-body" id="contentBody">
+                    <div class="empty-state">Loading...</div>
+                </div>
+            </main>
         </div>
 
-        <div class="menu-section">
-            <div class="menu-title">RESOURCES</div>
-            <a href="#" class="menu-item" data-section="policies">Policies</a>
-            <a href="#" class="menu-item" data-section="pluginRules">Plugin Rules</a>
-        </div>
-    </aside>
+        <div class="layout hidden" id="settingLayout">
+            <aside class="sidebar">
+                <div class="menu-section">
+                    <div class="menu-title">SETTINGS</div>
+                    <a href="#" class="menu-item active" data-section="about">About</a>
+                    <a href="#" class="menu-item" data-section="CWE">Vulnerable</a>
+                </div>
+                <div class="menu-section">
+                    <div class="menu-title">ACCOUNT</div>
+                    <a href="#" class="menu-item" data-section="profile">Profile</a>
+                </div>
+            </aside>
 
-    <main class="content" id="mainContent">
-        <div class="content-header">
-            <h2 id="sectionTitle">My Scans</h2>
-            <div class="action-buttons">
-                <button class="btn">Import</button>
-                <button class="btn">New Folder</button>
-                <button class="btn primary">+ New Scan</button>
+            <main class="content" id="settingMainContent">
+                <div class="content-header">
+                    <h2 id="settingSectionTitle">About</h2>
+                </div>
+                <div class="content-body" id="settingContentBody"></div>
+            </main>
+        </div>
+
+        <!-- === MODAL CREATE SCAN === -->
+        <div id="createScanModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Create New Scan</h3>
+                    <span id="btnCloseIcon" class="close-modal">&times;</span>
+                </div>
+                <form id="createScanForm">
+                    <div class="form-group">
+                        <label for="appName">Application Name</label>
+                        <input type="text" id="appName" placeholder="e.g. PhimChua" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appUrl">URL</label>
+                        <input type="url" id="appUrl" placeholder="https://example.com" required />
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="appType">Type</label>
+                            <select id="appType">
+                                <option value="WEB">Web Application</option>
+                                <option value="MOBILE">Mobile Application</option>
+                                <option value="API">API Service</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appDesc">Description</label>
+                        <textarea id="appDesc" rows="2" placeholder="Short description..."></textarea>
+                    </div>
+
+                    <!-- Dynamic Tools Section -->
+                    <div class="form-group">
+                        <label>Select Scan Tools</label>
+                        <div id="toolsContainer" class="checkbox-group">
+                            <p class="loading-text">Loading tools...</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" id="btnCancelScan" class="btn">Cancel</button>
+                        <button type="submit" class="btn primary">Start Scan</button>
+                    </div>
+                </form>
             </div>
         </div>
 
-        <div class="content-body" id="contentBody">
-            <div class="empty-state">
-                <p>This folder is empty.</p>
-                <a href="#" class="link">Create a new scan.</a>
+        <!-- === MODAL ADD SCAN TO EXISTING APP (Mới) === -->
+        <div id="addScanToAppModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!-- Hiển thị tên App đang chọn để user biết -->
+                    <h3>New Scan for: <span id="targetAppName" style="color: var(--primary)"></span></h3>
+                    <span id="btnCloseAddScan" class="close-modal">&times;</span>
+                </div>
+                <form id="addScanToAppForm">
+                    <!-- Hidden field để lưu ID của app đang chọn -->
+                    <input type="hidden" id="targetAppId">
+
+                    <div class="form-group">
+                        <label>Select Scan Tools</label>
+                        <!-- Tái sử dụng CSS checkbox-group -->
+                        <div id="toolsContainerForAdd" class="checkbox-group">
+                            <p class="loading-text">Loading tools...</p>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" id="btnCancelAddScan" class="btn">Cancel</button>
+                        <button type="submit" class="btn primary">Run Scan</button>
+                    </div>
+                </form>
             </div>
         </div>
-    </main>
-
-</div>
-
-<div class="layout hidden" id="settingLayout">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="menu-section">
-            <div class="menu-title">SETTINGS</div>
-            <a href="#" class="menu-item active" data-section="about">About</a>
-            <a href="#" class="menu-item" data-section="CWE">Vulnerable</a>
-        </div>
-
-        <div class="menu-section">
-            <div class="menu-title">ACCOUNT</div>
-            <a href="#" class="menu-item" data-section="profile">Profile</a>
-        </div>
-    </aside>
-
-    <main class="content" id="settingMainContent">
-        <div class="content-header">
-            <h2 id="settingSectionTitle">About</h2>
-        </div>
-
-        <div class="content-body" id="settingContentBody">
-
-        </div>
-    </main>
-
-</div>
-
-</body>
+    </body>
 </html>

@@ -27,4 +27,13 @@ public class ApplicationController {
         List<ApplicationResponse> responses = applicationService.getAllApplication(username);
         return new ResponseEntity<>(responses, HttpStatus.OK);
     }
+
+    @GetMapping("/{applicationId}")
+    public ResponseEntity<ApplicationResponse> getApplication(
+            @PathVariable Long applicationId,
+            Authentication authentication
+            ) throws ResponseStatusException {
+        String username = authentication.getName();
+        return new ResponseEntity<>(applicationService.getApplication(applicationId, username), HttpStatus.OK);
+    }
 }
