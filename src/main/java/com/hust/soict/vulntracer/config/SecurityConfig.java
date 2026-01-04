@@ -29,6 +29,8 @@ public class SecurityConfig {
                         .requestMatchers("/", "/home","/script/**", "/css/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/scan/callback").permitAll()
+                        .requestMatchers("/scan-detail/**").permitAll()
+                        .requestMatchers("/cwe/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -71,8 +71,16 @@
                 <div class="menu-section">
                     <div class="menu-title">SETTINGS</div>
                     <a href="#" class="menu-item active" data-section="about">About</a>
-                    <a href="#" class="menu-item" data-section="CWE">Vulnerable</a>
+                    <a href="#" class="menu-item" data-section="CWE">Vulnerability Database</a>
                 </div>
+
+                <!-- ADMIN ONLY SECTION -->
+                <div class="menu-section" id="adminSection" style="display:none">
+                    <div class="menu-title">ADMINISTRATION</div>
+                    <input type="file" id="cweFileInput" accept=".xml" style="display: none;" onchange="CweController.handleFileUpload(this)">
+                    <a href="#" class="menu-item" onclick="document.getElementById('cweFileInput').click()">Import CWE XML</a>
+                </div>
+
                 <div class="menu-section">
                     <div class="menu-title">ACCOUNT</div>
                     <a href="#" class="menu-item" data-section="profile">Profile</a>
@@ -82,8 +90,11 @@
             <main class="content" id="settingMainContent">
                 <div class="content-header">
                     <h2 id="settingSectionTitle">About</h2>
+                    <div id="settingActions" class="action-buttons"></div>
                 </div>
-                <div class="content-body" id="settingContentBody"></div>
+
+                <div class="content-body" id="settingContentBody">
+                </div>
             </main>
         </div>
 

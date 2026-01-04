@@ -4,41 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scan Details - VulnTracer</title>
-  <!-- CSS Chung -->
   <link rel="stylesheet" href="/css/dashboard.css">
-  <!-- CSS Riêng cho trang này -->
   <link rel="stylesheet" href="/css/scan-detail.css">
-  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Script Logic -->
   <script defer src="/script/scan-detail.js"></script>
 </head>
 <body>
 
 <!-- TOPBAR (Giống Dashboard) -->
-<header class="topbar">
-  <div class="topbar-left">
-    <a href="/" class="brand">
-      <span class="brand-main">VulnTracer</span>
-      <span class="brand-sub">Scan Report</span>
-    </a>
-  </div>
-  <div class="topbar-right">
-    <div class="user-info">
-      <span id="username">Loading...</span>
-      <img src="https://ui-avatars.com/api/?name=User" class="avatar" id="avatar">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">
+        <span class="brand-main">VulnTracer</span>
+        <span class="brand-sub">Scan Report</span>
+      </div>
     </div>
-  </div>
-</header>
+
+    <div class="topbar-right">
+      <div class="user-area">
+        <div class="user-info" id="userSection">
+          <span id="username">Loading...</span>
+          <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="User" class="avatar" id="avatar" />
+          <div class="user-menu" id="userMenu">
+            <a href="/profile" class="user-menu-item">Profile</a>
+            <a href="#" id="logoutBtn" class="user-menu-item">Logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
 
 <div class="report-container">
-  <!-- HEADER & BACK BUTTON -->
   <div class="report-header">
-    <a href="/" class="btn-back">← Back to Dashboard</a>
+    <a href="/home" class="btn-back">← Back to Dashboard</a>
     <h1 id="pageTitle">Scan Report #...</h1>
   </div>
 
-  <!-- TOP SECTION: INFO & CHART -->
   <div class="overview-grid">
     <!-- 1. General Info Card -->
     <div class="card info-card">

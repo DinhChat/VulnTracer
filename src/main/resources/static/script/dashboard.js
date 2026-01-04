@@ -7,7 +7,10 @@ const CONFIG = {
         APP_DETAIL: (id) => `/application/${id}`,
         APP_SCANS: (id) => `/scan/application/${id}`,
         TOOLS: "/tool",
-        CREATE_SCAN: "/scan"
+        CREATE_SCAN: "/scan",
+        CWE_LIST: (page, size) => `/cwe?page=${page}&size=${size}`,
+        CWE_DETAIL: (id) => `/cwe/id/${id}`,
+        IMPORT_CWE: "/admin/upload-cwe"
     }
 };
 
@@ -67,6 +70,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // === UI INITIALIZATION ===
     const userInfo = Utils.parseJwt(token);
     document.getElementById("username").textContent = userInfo?.sub || "Admin";
+    const isAdmin = userInfo?.role === "ADMIN" || userInfo?.role === "ROLE_ADMIN";
+
+    if (isAdmin) {
+        document.getElementById("adminSection").style.display = "block";
+    }
 
     // User Menu Toggle
     document.getElementById("avatar").addEventListener("click", (e) => {
@@ -248,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
 
-                // Render Table vào div con
+                // Render Table
                 this.renderScanTable(scanHistory, document.getElementById("appScanList"));
 
             } catch (e) {
@@ -372,11 +380,219 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    //CWE controller
+
+    const CweController = {
+        currentPage: 0,
+        pageSize: 15,
+
+        // Gọi khi click vào menu "Vulnerability Database"
+        async loadList(page = 0) {
+            this.currentPage = page;
+            const container = document.getElementById("settingContentBody");
+            const title = document.getElementById("settingSectionTitle");
+            const actions = document.getElementById("settingActions");
+
+            title.textContent = "Common Weakness Enumeration (CWE)";
+            actions.innerHTML = ""; // Xóa các nút cũ nếu có
+            Utils.showLoading(container);
+
+            try {
+                // Fetch API: GET /cwe?page=x&size=y
+                const data = await API.fetch(CONFIG.ENDPOINTS.CWE_LIST(page, this.pageSize));
+
+                // Spring Page Response: { content: [], totalPages: 10, number: 0, ... }
+                if (!data || !data.content) throw new Error("Invalid data format");
+
+                this.renderTable(data, container);
+            } catch (e) {
+                container.innerHTML = `<div class="empty-state">Error loading CWEs: ${e.message}</div>`;
+            }
+        },
+
+        renderTable(pageData, container) {
+            const list = pageData.content;
+            if (list.length === 0) {
+                container.innerHTML = '<div class="empty-state">No CWEs found in database.</div>';
+                return;
+            }
+
+            let html = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th width="10%">ID</th>
+                            <th width="30%">Name</th>
+                            <th width="50%">Short Description</th>
+                            <th width="10%">Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            list.forEach(item => {
+                // Cắt ngắn description
+                const shortDesc = item.shortDescription
+                    ? (item.shortDescription.length > 100 ? item.shortDescription.substring(0, 100) + "..." : item.shortDescription)
+                    : "";
+
+                html += `
+                    <tr onclick="CweController.loadDetail('${item.cweId}')" style="cursor:pointer">
+                        <td><strong>${item.cweId}</strong></td>
+                        <td>${item.cweName}</td>
+                        <td style="color:#666">${shortDesc}</td>
+                        <td><span class="badge">${item.sourceFile || 'N/A'}</span></td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table>`;
+
+            // Pagination Controls
+            const hasNext = !pageData.last;
+            const hasPrev = !pageData.first;
+
+            html += `
+                <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px; align-items: center;">
+                    <button class="btn" ${!hasPrev ? 'disabled' : ''} onclick="CweController.loadList(${this.currentPage - 1})">Previous</button>
+                    <span>Page ${pageData.number + 1} of ${pageData.totalPages}</span>
+                    <button class="btn" ${!hasNext ? 'disabled' : ''} onclick="CweController.loadList(${this.currentPage + 1})">Next</button>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        },
+
+        async loadDetail(cweId) {
+            const container = document.getElementById("settingContentBody");
+            const title = document.getElementById("settingSectionTitle");
+
+            // Breadcrumb Header
+            title.innerHTML = `
+                <div class="breadcrumb-nav">
+                    <button class="btn-back" onclick="CweController.loadList(${this.currentPage})">&#8592;</button>
+                    <span>CWE List</span> <span style="color:#ccc">/</span> <span>${cweId}</span>
+                </div>`;
+
+            Utils.showLoading(container);
+
+            try {
+                // Fetch API: GET /cwe/id/{cweId}
+                const cwe = await API.fetch(CONFIG.ENDPOINTS.CWE_DETAIL(cweId));
+
+                // Render Detail View
+                container.innerHTML = `
+                    <div class="app-detail-container">
+                        <div class="app-info-card" style="display:block"> <!-- Reuse class but block layout -->
+                            <h2 style="margin-top:0; color:var(--primary)">${cwe.cweId}: ${cwe.cweName}</h2>
+                            
+                            <div class="detail-group">
+                                <label>Short Description</label>
+                                <p>${cwe.shortDescription || 'N/A'}</p>
+                            </div>
+
+                            ${cwe.extendedDescription ? `
+                            <div class="detail-group">
+                                <label>Extended Description</label>
+                                <p>${cwe.extendedDescription}</p>
+                            </div>` : ''}
+
+                            <div class="detail-group">
+                                <label>Likelihood</label>
+                                <span class="badge">${cwe.likelihood || 'Unknown'}</span>
+                            </div>
+
+                            ${cwe.related ? `
+                            <div class="detail-group">
+                                <label>Related Weaknesses</label>
+                                <p>${cwe.related}</p>
+                            </div>` : ''}
+
+                            ${cwe.example ? `
+                            <div class="detail-group">
+                                <label>Example Code / Scenario</label>
+                                <pre>${cwe.example}</pre>
+                            </div>` : ''}
+
+                            ${cwe.notes ? `
+                            <div class="detail-group">
+                                <label>Notes</label>
+                                <p style="font-style:italic">${cwe.notes}</p>
+                            </div>` : ''}
+
+                            <div style="margin-top:20px; font-size:12px; color:#999">
+                                Source: ${cwe.sourceFile} | Updated: ${Utils.formatDate(cwe.updatedAt)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (e) {
+                container.innerHTML = `<div class="empty-state">Error loading detail: ${e.message}</div>`;
+            }
+        },
+
+        async handleFileUpload(inputElement) {
+            const file = inputElement.files[0];
+            if (!file) return;
+
+            if (!confirm(`Import file "${file.name}" to database? This might take a while.`)) {
+                inputElement.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            alert("Uploading... Please wait.");
+
+            try {
+                const response = await fetch(CONFIG.API_HOST + CONFIG.ENDPOINTS.IMPORT_CWE, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert("Import CWE successful!");
+                    if (document.querySelector('[data-section="CWE"]').classList.contains("active")) {
+                        this.loadList(0);
+                    }
+                } else {
+                    const txt = await response.text();
+                    alert("Import failed: " + txt);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error uploading file.");
+            } finally {
+                inputElement.value = '';
+            }
+        }
+    };
+
+
     // Placeholder for Settings
     const SettingsController = {
         load(section) {
-            document.getElementById("settingSectionTitle").textContent = section.toUpperCase();
-            document.getElementById("settingContentBody").innerHTML = `<p>Setting section: ${section}</p>`;
+            if (section === "CWE") {
+                CweController.loadList(0);
+            } else if (section === "about") {
+                this.renderAbout();
+            } else if (section === "profile") {
+                this.renderProfile();
+            }
+        },
+        renderAbout() {
+            document.getElementById("settingSectionTitle").textContent = "About";
+            document.getElementById("settingContentBody").innerHTML = `<p>VulnTracer v1.0. Security Scanner Project.</p>`;
+            document.getElementById("settingActions").innerHTML = "";
+        },
+        renderProfile() {
+            document.getElementById("settingSectionTitle").textContent = "My Profile";
+            document.getElementById("settingContentBody").innerHTML = `<p>Username: <strong>${userInfo?.sub}</strong></p><p>Role: ${userInfo?.role || 'User'}</p>`;
+            document.getElementById("settingActions").innerHTML = "";
         }
     };
 
@@ -384,6 +600,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.ScanController = ScanController;
     window.ModalController = ModalController;
     window.NavController = NavController;
+    window.CweController = CweController;
 
     // === RUN ===
     NavController.init();

@@ -12,12 +12,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-@RestController("/cwe")
+@RestController
+@RequestMapping(("/cwe"))
 @CrossOrigin
-@AllArgsConstructor
-@NoArgsConstructor
 public class CWEController {
-    private CWEService CWEService;
+    private final CWEService CWEService;
+
+    public CWEController(CWEService cweService) {
+        CWEService = cweService;
+    }
 
     @GetMapping
     public ResponseEntity<Page<CWEItemResponse>> getAllVulnerable(

@@ -259,37 +259,7 @@ public class ScanServiceImpl implements ScanService {
         res.setTemplateId(finding.getTemplateId());
         res.setName(finding.getName());
         res.setSeverity(finding.getSeverity());
-//        res.setDescription(finding.getDescription());
         res.setMatchedAt(finding.getMatchedAt());
-
-//        List<NucleiEvidenceResponse> evidences =
-//                nucleiEvidenceRepository.findByNucleiFinding(finding)
-//                        .stream()
-//                        .map(ev -> {
-//                            NucleiEvidenceResponse e = new NucleiEvidenceResponse();
-//                            e.setType(ev.getType());
-//                            e.setCommand(ev.getCommand());
-//                            e.setResources(ev.getResources());
-//                            return e;
-//                        })
-//                        .toList();
-//
-//        res.setEvidences(evidences);
-//
-//        List<CWEResponse> cwes =
-//                nucleiFindingCweRepository.findByFinding(finding)
-//                        .stream()
-//                        .map(fc -> {
-//                            CWEResponse c = new CWEResponse();
-//                            c.setCweId(fc.getCwe().getCweId());
-//                            c.setName(fc.getCwe().getCweName());
-//                            c.setDescription(fc.getCwe().getShortDescription());
-//                            return c;
-//                        })
-//                        .toList();
-//
-//        res.setCwes(cwes);
-
         return res;
     }
 }

@@ -1,15 +1,28 @@
 const API_HOST = "http://localhost:8080";
 
-// --- Utils (Giống dashboard) ---
+// --- Utils ---
 function getAuthHeaders() {
     const token = localStorage.getItem("token");
     if (!token) window.location.href = "/auth/login";
     return { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
 }
+
 function formatDate(dateStr) {
     if (!dateStr) return "N/A";
     return new Date(dateStr).toLocaleString("vi-VN");
 }
+
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+            atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+        );
+        return JSON.parse(jsonPayload);
+    } catch (e) { return null; }
+}
+
 
 document.addEventListener("DOMContentLoaded", async () => {
     // 1. Lấy ID từ URL
@@ -18,19 +31,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (!scanId || isNaN(scanId)) {
         alert("Invalid Scan ID!");
-        window.location.href = "/";
+        window.location.href = "/home";
         return;
     }
 
-    // 2. Setup User UI (Minimal)
+    // 2. Setup User UI
     const token = localStorage.getItem("token");
-    if(!token) window.location.href = "/auth/login";
-    document.getElementById("username").textContent = "User";
+    if (!token) window.location.href = "/auth/login";
 
-    // 3. Fetch Scan Data
+    const userInfo = parseJwt(token);
+    document.getElementById("username").textContent = userInfo?.sub || "User";
+    // Có thể parse JWT lấy username ở đây nếu cần
+
+    // 3. Setup Logout
+    const logoutBtn = document.getElementById("logoutBtn");
+    if(logoutBtn) {
+        logoutBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            localStorage.removeItem("token");
+            window.location.href = "/auth/login";
+        });
+    }
+
+    // 4. Fetch Scan Data
     await loadScanDetails(scanId);
 
-    // 4. Setup Drawer Close Events
+    // 5. Setup Drawer Close Events
     setupDrawer();
 });
 
@@ -43,9 +69,8 @@ async function loadScanDetails(scanId) {
         });
 
         if (!response.ok) throw new Error("Failed to load scan");
-        const data = await response.json(); // Data format như bạn cung cấp
+        const data = await response.json();
 
-        // Render từng phần
         renderInfo(data.scan);
         renderChart(data.summary);
         renderVulnerabilities(data.vulnerabilities);
@@ -59,36 +84,28 @@ async function loadScanDetails(scanId) {
 // --- RENDER INFO ---
 function renderInfo(scan) {
     document.getElementById("appName").textContent = scan.applicationName;
-    document.getElementById("scanStatus").innerHTML = `<span class="status-${scan.status.toLowerCase()}">${scan.status}</span>`; // Tái sử dụng class css dashboard
+    const statusClass = scan.status ? `status-${scan.status.toLowerCase()}` : '';
+    document.getElementById("scanStatus").innerHTML = `<span class="${statusClass}">${scan.status}</span>`;
     document.getElementById("startTime").textContent = formatDate(scan.startTime);
     document.getElementById("completedTime").textContent = formatDate(scan.completedAt);
 
-    // Tính duration đơn giản
     if (scan.startTime && scan.completedAt) {
         const start = new Date(scan.startTime);
         const end = new Date(scan.completedAt);
         const diffMs = end - start;
         const diffMins = Math.floor(diffMs / 60000);
-        document.getElementById("duration").textContent = `${diffMins} mins`;
+        document.getElementById("duration").textContent = diffMins > 0 ? `${diffMins} mins` : "< 1 min";
+    } else {
+        document.getElementById("duration").textContent = "...";
     }
 }
 
-// --- RENDER CHART (Chart.js) ---
+// --- RENDER CHART ---
 function renderChart(summary) {
     const ctx = document.getElementById('summaryChart').getContext('2d');
-
-    // Màu sắc theo Severity
-    const colors = {
-        critical: '#721c24',
-        high: '#d93025',
-        medium: '#b05c06',
-        low: '#1e40af',
-        info: '#4b5563'
-    };
-
+    const colors = { critical: '#721c24', high: '#d93025', medium: '#b05c06', low: '#1e40af', info: '#4b5563' };
     const dataValues = [summary.critical, summary.high, summary.medium, summary.low, summary.info];
 
-    // Nếu tổng = 0 -> Vẽ màu xám
     if (summary.total === 0) {
         document.getElementById('chartLegend').innerHTML = "No vulnerabilities found.";
         return;
@@ -107,13 +124,10 @@ function renderChart(summary) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false } // Tắt legend mặc định để tự custom
-            }
+            plugins: { legend: { display: false } }
         }
     });
 
-    // Custom Legend
     const legendContainer = document.getElementById('chartLegend');
     const labels = ['Critical', 'High', 'Medium', 'Low', 'Info'];
     const bg = [colors.critical, colors.high, colors.medium, colors.low, colors.info];
@@ -131,7 +145,7 @@ function renderChart(summary) {
 }
 
 // --- RENDER TABLE ---
-let allVulns = []; // Store global để search
+let allVulns = [];
 
 function renderVulnerabilities(vulns) {
     allVulns = vulns;
@@ -146,92 +160,104 @@ function renderVulnerabilities(vulns) {
     vulns.forEach(v => {
         const tr = document.createElement("tr");
         const severityClass = `sev-${v.severity.toLowerCase()}`;
-
         tr.innerHTML = `
             <td><span class="${severityClass}">${v.severity}</span></td>
             <td><strong>${v.name}</strong></td>
             <td>${v.matchedAt}</td>
             <td style="color:#666">${v.templateId}</td>
         `;
-
-        // Click row -> Open Details
+        // Pass ID vào hàm openVulnDetail
         tr.addEventListener("click", () => openVulnDetail(v));
         tbody.appendChild(tr);
     });
 
-    // Setup Search Logic
-    document.getElementById("vulnSearch").addEventListener("input", (e) => {
-        const term = e.target.value.toLowerCase();
-        const filtered = allVulns.filter(v => v.name.toLowerCase().includes(term) || v.templateId.toLowerCase().includes(term));
-
-        // Re-render (tốt nhất là tách hàm tạo tr ra, nhưng viết nhanh ở đây)
-        tbody.innerHTML = "";
-        filtered.forEach(v => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td><span class="sev-${v.severity.toLowerCase()}">${v.severity}</span></td>
-                <td><strong>${v.name}</strong></td>
-                <td>${v.matchedAt}</td>
-                <td style="color:#666">${v.templateId}</td>
-            `;
-            tr.addEventListener("click", () => openVulnDetail(v));
-            tbody.appendChild(tr);
+    // Search Logic
+    const searchInput = document.getElementById("vulnSearch");
+    if(searchInput){
+        searchInput.addEventListener("input", (e) => {
+            const term = e.target.value.toLowerCase();
+            const rows = tbody.querySelectorAll("tr");
+            rows.forEach((row, index) => {
+                const v = allVulns[index];
+                if (v && (v.name.toLowerCase().includes(term) || v.templateId.toLowerCase().includes(term))) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
         });
-    });
+    }
 }
 
-// --- DRAWER DETAILS LOGIC ---
-async function openVulnDetail(vuln) {
+// --- DRAWER DETAILS LOGIC (FETCH API THẬT) ---
+async function openVulnDetail(basicInfo) {
     const drawer = document.getElementById("vulnDrawer");
-    const overlay = document.getElementById("drawerOverlay");
 
-    // Fill basic info from List Item
-    document.getElementById("drawerTitle").textContent = vuln.name;
-    document.getElementById("drawerSeverity").textContent = vuln.severity;
-    document.getElementById("drawerSeverity").className = `badge-large sev-${vuln.severity.toLowerCase()}`;
-    document.getElementById("drawerTemplateId").textContent = vuln.templateId;
-    document.getElementById("drawerUrl").textContent = vuln.matchedAt;
-    document.getElementById("drawerUrl").href = vuln.matchedAt.startsWith('http') ? vuln.matchedAt : '#';
+    // 1. Hiển thị thông tin cơ bản
+    document.getElementById("drawerTitle").textContent = basicInfo.name;
+    const sevEl = document.getElementById("drawerSeverity");
+    sevEl.textContent = basicInfo.severity;
+    sevEl.className = `badge-large sev-${basicInfo.severity.toLowerCase()}`;
 
-    // Show drawer first with loading state for details
-    drawer.classList.remove("hidden");
-    // Trick to trigger animation
-    setTimeout(() => drawer.classList.add("open"), 10);
+    document.getElementById("drawerTemplateId").textContent = basicInfo.templateId;
+    const urlEl = document.getElementById("drawerUrl");
+    urlEl.textContent = basicInfo.matchedAt;
+    urlEl.href = basicInfo.matchedAt.startsWith('http') ? basicInfo.matchedAt : '#';
 
-    // FETCH MORE DETAILS (CWE, Description, Evidence)
-    // Giả sử có API: /scan/result/{id} hoặc trả về detail trong API cũ nhưng ẩn đi
-    // Ở đây tôi giả lập fetch hoặc hiển thị placeholder
-
+    // 2. Reset các trường chi tiết về trạng thái Loading
     const descEl = document.getElementById("drawerDesc");
     const evidenceEl = document.getElementById("drawerEvidence");
     const cweListEl = document.getElementById("drawerCweList");
 
     descEl.textContent = "Loading description...";
     evidenceEl.textContent = "Loading evidence...";
+    cweListEl.innerHTML = '<span style="color:#999; font-style:italic">Loading details...</span>';
 
+    // 3. Mở Drawer
+    drawer.classList.remove("hidden");
+    setTimeout(() => drawer.classList.add("open"), 10);
+
+    // 4. Fetch chi tiết từ API /vulnerability/{id}
     try {
-        // Thực tế: const detail = await fetchAPI(`/scan/vulnerability/${vuln.id}`);
-        // Giả lập data detail vì API trên chưa có field này
+        const response = await fetch(`${API_HOST}/vulnerability/${basicInfo.id}`, {
+            headers: getAuthHeaders()
+        });
 
-        // --- MOCK DATA START ---
-        const detail = {
-            description: "Detects usage of cookies without the Secure flag. This means cookies can be transmitted over unencrypted connections.",
-            evidence: "Set-Cookie: PHPSESSID=12345; path=/",
-            cwes: ["CWE-614", "CWE-1004"]
-        };
-        // --- MOCK DATA END ---
+        if (!response.ok) throw new Error("Failed to fetch details");
 
-        descEl.textContent = detail.description;
-        evidenceEl.textContent = detail.evidence;
+        // Data trả về theo JSON bạn cung cấp: { id, templateId, name, severity, description, evidences[], cwe[] }
+        const detail = await response.json();
 
-        // Render CWEs
+        // --- Bind Description ---
+        descEl.textContent = detail.description || "No description provided.";
+
+        // --- Bind Evidences ---
+        if (detail.evidences && detail.evidences.length > 0) {
+            // Lấy ra command curl hoặc hiển thị JSON nếu không có command
+            const evidenceText = detail.evidences.map(e => {
+                if (e.command) return `Command:\n${e.command}`;
+                return JSON.stringify(e, null, 2);
+            }).join('\n\n----------------\n\n');
+            evidenceEl.textContent = evidenceText;
+        } else {
+            evidenceEl.textContent = "No evidence available.";
+        }
+
+        // --- Bind CWEs ---
         cweListEl.innerHTML = "";
-        if (detail.cwes && detail.cwes.length > 0) {
-            detail.cwes.forEach(cwe => {
+        if (detail.cwe && detail.cwe.length > 0) {
+            detail.cwe.forEach(cweString => {
+
                 const tag = document.createElement("span");
                 tag.className = "cwe-tag";
-                tag.textContent = cwe;
-                tag.onclick = () => window.open(`https://cwe.mitre.org/data/definitions/${cwe.split('-')[1]}.html`, '_blank');
+                tag.textContent = cweString;
+                const cweId = cweString.split(':')[0].trim();
+
+                // Sự kiện click chuyển trang
+                tag.addEventListener("click", () => {
+                    window.location.href = `/cwe-detail/${cweId}`;
+                });
+
                 cweListEl.appendChild(tag);
             });
         } else {
@@ -239,7 +265,10 @@ async function openVulnDetail(vuln) {
         }
 
     } catch (e) {
-        descEl.textContent = "Could not load details.";
+        console.error(e);
+        descEl.textContent = "Error loading details.";
+        evidenceEl.textContent = "Error loading details.";
+        cweListEl.textContent = "Error.";
     }
 }
 
@@ -250,9 +279,9 @@ function setupDrawer() {
 
     const close = () => {
         drawer.classList.remove("open");
-        setTimeout(() => drawer.classList.add("hidden"), 300); // Wait for animation
+        setTimeout(() => drawer.classList.add("hidden"), 300);
     };
 
-    closeBtn.addEventListener("click", close);
-    overlay.addEventListener("click", close);
+    if(closeBtn) closeBtn.addEventListener("click", close);
+    if(overlay) overlay.addEventListener("click", close);
 }
