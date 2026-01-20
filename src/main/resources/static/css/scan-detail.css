@@ -127,3 +127,142 @@ pre { background: #1e293b; color: #e2e8f0; padding: 15px; border-radius: 6px; ov
 .cwe-tags { display: flex; gap: 5px; flex-wrap: wrap; }
 .cwe-tag { background: #e0e7ff; color: #3730a3; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; cursor: pointer; }
 .cwe-tag:hover { background: #c7d2fe; }
+
+/* CSS cho phần Description và Solution */
+#drawerDesc p, #drawerSolution p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+#drawerDesc ul, #drawerSolution ul {
+    margin-left: 20px;
+    margin-bottom: 10px;
+    list-style-type: disc;
+}
+#drawerDesc a, #drawerSolution a {
+    color: #007bff;
+    text-decoration: none;
+}
+#drawerDesc a:hover, #drawerSolution a:hover {
+    text-decoration: underline;
+}
+
+/* Tag CWE */
+.cwe-tag {
+    display: inline-block;
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 600;
+    border: 1px solid #ced4da;
+    transition: all 0.2s;
+}
+.cwe-tag:hover {
+    background-color: #dee2e6;
+    border-color: #adb5bd;
+}
+
+/* Modal Overlay - Backdrop làm mờ */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
+    z-index: 9999; /* Cao hơn Drawer */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Modal Box */
+.modal-container {
+    background: #1e293b; /* Màu nền tối */
+    color: #e2e8f0;
+    width: 90%;
+    max-width: 700px;
+    max-height: 85vh;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border: 1px solid #334155;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.open .modal-container {
+    transform: translateY(0);
+}
+
+/* Close Button */
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.modal-close:hover { color: #fff; }
+
+/* Content Styling */
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #334155;
+    background: #0f172a;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-header h3 { margin: 10px 0 0 0; font-size: 1.25rem; }
+
+.badge-cwe {
+    background: #2563eb;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.modal-body {
+    padding: 25px;
+    overflow-y: auto;
+}
+
+.modal-section { margin-top: 20px; }
+.modal-section h4 {
+    margin-bottom: 8px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+.modal-section p { line-height: 1.6; color: #cbd5e1; font-size: 0.95rem; }
+
+.code-block {
+    background: #0f172a;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #a5b4fc;
+    white-space: pre-wrap;
+}
+
+.hidden { display: none !important; }

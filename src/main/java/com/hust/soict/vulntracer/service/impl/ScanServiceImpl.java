@@ -19,7 +19,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -249,12 +248,14 @@ public class ScanServiceImpl implements ScanService {
             finding.setConfidence(vuln.getConfidence());
             finding.setDescription(vuln.getDescription());
             finding.setSolution(vuln.getSolution());
+            finding.setWascId(vuln.getWascId());
+            finding.setCweId(vuln.getCweId());
 
             finding = zapFindingRepository.save(finding);
 
             if (vuln.getCweId() != null && !vuln.getCweId().isEmpty()) {
-                String normalizedCweId = "CWE-" + vuln.getCweId();
-                CWE cwe = cweRepository.findById(normalizedCweId).orElse(null);
+                Integer cweNum = Integer.parseInt(vuln.getCweId());
+                CWE cwe = cweRepository.findByCweNum(cweNum);
 
                 if (cwe != null) {
                     ZapFindingCWE mapping = new ZapFindingCWE();
@@ -360,10 +361,7 @@ public class ScanServiceImpl implements ScanService {
         res.setZapFindingId(finding.getZapFindingId());
         res.setPluginId(finding.getPluginId());
         res.setName(finding.getName());
-        res.setConfidence(finding.getConfidence());
         res.setSeverity(finding.getSeverity());
-        res.setDescription(finding.getDescription());
-        res.setSolution(finding.getSolution());
         return res;
     }
 }

@@ -7,8 +7,5 @@ public class ZapFindingResponse {
     private Long zapFindingId;
     private String pluginId;
     private String name;
-    private String confidence;
     private String severity;
-    private String description;
-    private String solution;
 }

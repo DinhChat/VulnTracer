@@ -21,5 +21,6 @@ public class ZapEvidence {
     private String uri;
     private String method;
     private String param;
+    @Column(columnDefinition = "LONGTEXT")
     private String evidence;
 }

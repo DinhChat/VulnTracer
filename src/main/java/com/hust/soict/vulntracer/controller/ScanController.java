@@ -66,12 +66,12 @@ public class ScanController {
     }
 
     @GetMapping("/{scanId}")
-    public ResponseEntity<ScanResultResponse> getScanResult(
+    public ResponseEntity<ScanResultResponse<?>> getScanResult(
             @PathVariable Long scanId,
             Authentication authentication
     ) throws ResponseStatusException {
         String username = authentication.getName();
-        ScanResultResponse response = scanService.getScanResult(scanId, username);
+        ScanResultResponse<?> response = scanService.getScanResult(scanId, username);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

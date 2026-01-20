@@ -58,6 +58,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 5. Setup Drawer Close Events
     setupDrawer();
+
+    setupCweModal();
 });
 
 async function loadScanDetails(scanId) {
@@ -160,18 +162,27 @@ function renderVulnerabilities(vulns) {
     vulns.forEach(v => {
         const tr = document.createElement("tr");
         const severityClass = `sev-${v.severity.toLowerCase()}`;
+
+        const isZap = v.hasOwnProperty('zapFindingId');
+
+        const displayId = isZap ? v.pluginId : v.templateId;
+        const displayMatchedAt = isZap ? "-" : (v.matchedAt || "-");
+
         tr.innerHTML = `
             <td><span class="${severityClass}">${v.severity}</span></td>
             <td><strong>${v.name}</strong></td>
-            <td>${v.matchedAt}</td>
-            <td style="color:#666">${v.templateId}</td>
+            <td class="text-truncate" style="max-width: 250px;" title="${displayMatchedAt}">
+                ${displayMatchedAt}
+            </td>
+            <td style="color:#666">${displayId}</td>
         `;
-        // Pass ID vào hàm openVulnDetail
+
+        // Pass toàn bộ object v vào hàm detail
         tr.addEventListener("click", () => openVulnDetail(v));
         tbody.appendChild(tr);
     });
 
-    // Search Logic
+    // Search Logic (Updated)
     const searchInput = document.getElementById("vulnSearch");
     if(searchInput){
         searchInput.addEventListener("input", (e) => {
@@ -179,7 +190,12 @@ function renderVulnerabilities(vulns) {
             const rows = tbody.querySelectorAll("tr");
             rows.forEach((row, index) => {
                 const v = allVulns[index];
-                if (v && (v.name.toLowerCase().includes(term) || v.templateId.toLowerCase().includes(term))) {
+                if (!v) return;
+
+                const isZap = v.hasOwnProperty('zapFindingId');
+                const idToCheck = isZap ? v.pluginId : v.templateId;
+
+                if (v.name.toLowerCase().includes(term) || idToCheck.toLowerCase().includes(term)) {
                     row.style.display = "";
                 } else {
                     row.style.display = "none";
@@ -192,84 +208,142 @@ function renderVulnerabilities(vulns) {
 // --- DRAWER DETAILS LOGIC (FETCH API THẬT) ---
 async function openVulnDetail(basicInfo) {
     const drawer = document.getElementById("vulnDrawer");
+    const isZap = basicInfo.hasOwnProperty('zapFindingId');
 
-    // 1. Hiển thị thông tin cơ bản
+    // --- 1. Hiển thị thông tin Header (Chung) ---
     document.getElementById("drawerTitle").textContent = basicInfo.name;
     const sevEl = document.getElementById("drawerSeverity");
     sevEl.textContent = basicInfo.severity;
     sevEl.className = `badge-large sev-${basicInfo.severity.toLowerCase()}`;
 
-    document.getElementById("drawerTemplateId").textContent = basicInfo.templateId;
-    const urlEl = document.getElementById("drawerUrl");
-    urlEl.textContent = basicInfo.matchedAt;
-    urlEl.href = basicInfo.matchedAt.startsWith('http') ? basicInfo.matchedAt : '#';
+    // ID hiển thị (PluginID hoặc TemplateID)
+    document.getElementById("drawerTemplateId").textContent = isZap ? basicInfo.pluginId : basicInfo.templateId;
 
-    // 2. Reset các trường chi tiết về trạng thái Loading
+    // URL Header (Nuclei có ngay, ZAP thì chưa chắc có ở list, tạm để trống hoặc update sau khi fetch detail)
+    const urlEl = document.getElementById("drawerUrl");
+    if (!isZap) {
+        urlEl.textContent = basicInfo.matchedAt;
+        urlEl.href = basicInfo.matchedAt.startsWith('http') ? basicInfo.matchedAt : '#';
+        urlEl.parentElement.style.display = "block"; // Show dòng URL
+    } else {
+        urlEl.parentElement.style.display = "none"; // Hide dòng URL tạm thời vì ZAP list ko có
+    }
+
+    // --- 2. Reset UI state ---
     const descEl = document.getElementById("drawerDesc");
+    const solutionContainer = document.getElementById("drawerSolutionContainer"); // Element mới
+    const solutionEl = document.getElementById("drawerSolution"); // Element mới
     const evidenceEl = document.getElementById("drawerEvidence");
     const cweListEl = document.getElementById("drawerCweList");
 
-    descEl.textContent = "Loading description...";
+    descEl.innerHTML = "Loading description..."; // Dùng innerHTML để support ZAP
     evidenceEl.textContent = "Loading evidence...";
     cweListEl.innerHTML = '<span style="color:#999; font-style:italic">Loading details...</span>';
 
-    // 3. Mở Drawer
+    // Reset Solution
+    if(solutionContainer) solutionContainer.style.display = "none";
+    if(solutionEl) solutionEl.innerHTML = "";
+
+    // Mở Drawer
     drawer.classList.remove("hidden");
     setTimeout(() => drawer.classList.add("open"), 10);
 
-    // 4. Fetch chi tiết từ API /vulnerability/{id}
+    // --- 3. Fetch Detail theo từng Tool ---
     try {
-        const response = await fetch(`${API_HOST}/vulnerability/${basicInfo.id}`, {
-            headers: getAuthHeaders()
-        });
+        let apiUrl = isZap
+            ? `${API_HOST}/zap_finding/${basicInfo.zapFindingId}`
+            : `${API_HOST}/vulnerability/${basicInfo.id}`;
 
+        const response = await fetch(apiUrl, { headers: getAuthHeaders() });
         if (!response.ok) throw new Error("Failed to fetch details");
-
-        // Data trả về theo JSON bạn cung cấp: { id, templateId, name, severity, description, evidences[], cwe[] }
         const detail = await response.json();
 
-        // --- Bind Description ---
-        descEl.textContent = detail.description || "No description provided.";
+        if (isZap) {
+            descEl.innerHTML = detail.description || "No description.";
 
-        // --- Bind Evidences ---
-        if (detail.evidences && detail.evidences.length > 0) {
-            // Lấy ra command curl hoặc hiển thị JSON nếu không có command
-            const evidenceText = detail.evidences.map(e => {
-                if (e.command) return `Command:\n${e.command}`;
-                return JSON.stringify(e, null, 2);
-            }).join('\n\n----------------\n\n');
-            evidenceEl.textContent = evidenceText;
-        } else {
-            evidenceEl.textContent = "No evidence available.";
+            if (detail.solution && solutionContainer && solutionEl) {
+                solutionContainer.style.display = "block";
+                solutionEl.innerHTML = detail.solution;
+            }
+
+            if (detail.evidences && detail.evidences.length > 0) {
+                const evidenceHtml = detail.evidences.map(e => {
+                    return `
+<div style="background: #050a0e; padding: 10px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid #03090e;">
+    <div><strong>Method:</strong> ${e.method}</div>
+    <div><strong>URI:</strong> <a style="color: #cbd5e1" href="${e.uri}" target="_blank">${e.uri}</a></div>
+    ${e.param ? `<div><strong>Param:</strong> ${e.param}</div>` : ''}
+    ${e.evidence ? `<div style="margin-top:5px; color:#d63333; font-family:monospace; word-break:break-all;">Match: ${e.evidence}</div>` : ''}
+</div>`;
+                }).join('');
+                evidenceEl.innerHTML = evidenceHtml;
+            } else {
+                evidenceEl.textContent = "No evidence provided.";
+            }
+
+            // CWE (ZAP trả về "cweId": "942" - Single value hoặc null)
+            cweListEl.innerHTML = "";
+            if (detail.cweId) {
+                const cweIdNum = detail.cweId;
+                const cweLabel = `CWE-${cweIdNum}`;
+                createCweTag(cweListEl, cweLabel, cweIdNum);
+            } else {
+                cweListEl.textContent = "None";
+            }
         }
 
-        // --- Bind CWEs ---
-        cweListEl.innerHTML = "";
-        if (detail.cwe && detail.cwe.length > 0) {
-            detail.cwe.forEach(cweString => {
+        // === XỬ LÝ NUCLEI ===
+        else {
+            descEl.textContent = detail.description || "No description.";
 
-                const tag = document.createElement("span");
-                tag.className = "cwe-tag";
-                tag.textContent = cweString;
-                const cweId = cweString.split(':')[0].trim();
+            if (detail.evidences && detail.evidences.length > 0) {
+                const evidenceText = detail.evidences.map(e => {
+                    if (e.command) return `Command:\n${e.command}`;
+                    return JSON.stringify(e, null, 2);
+                }).join('\n\n----------------\n\n');
+                evidenceEl.textContent = evidenceText; // Nuclei evidence thường là raw text/code
+            } else {
+                evidenceEl.textContent = "No evidence available.";
+            }
 
-                // Sự kiện click chuyển trang
-                tag.addEventListener("click", () => {
-                    window.location.href = `/cwe-detail/${cweId}`;
+            cweListEl.innerHTML = "";
+            if (detail.cwe && detail.cwe.length > 0) {
+                detail.cwe.forEach(cweString => {
+                    // Extract ID: "CWE-200" từ "CWE-200: Info"
+                    const cweIdFull = cweString.split(':')[0].trim(); // CWE-200
+                    const cweIdNum = cweIdFull.replace('CWE-', '');   // 200
+
+                    createCweTag(cweListEl, cweString, cweIdNum);
                 });
-
-                cweListEl.appendChild(tag);
-            });
-        } else {
-            cweListEl.textContent = "None";
+            } else {
+                cweListEl.textContent = "None";
+            }
         }
 
     } catch (e) {
         console.error(e);
         descEl.textContent = "Error loading details.";
-        evidenceEl.textContent = "Error loading details.";
+        evidenceEl.textContent = "";
         cweListEl.textContent = "Error.";
     }
+}
+
+// Helper tạo thẻ CWE để tái sử dụng logic
+function createCweTag(container, label, idNum) {
+    const tag = document.createElement("span");
+    tag.className = "cwe-tag";
+    tag.textContent = label;
+    tag.style.cursor = "pointer";
+    tag.style.marginRight = "5px";
+
+    tag.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openCweDetailsModal(idNum);
+    });
+
+    container.appendChild(tag);
+
+    container.appendChild(tag);
 }
 
 function setupDrawer() {
@@ -284,4 +358,82 @@ function setupDrawer() {
 
     if(closeBtn) closeBtn.addEventListener("click", close);
     if(overlay) overlay.addEventListener("click", close);
+}
+
+async function openCweDetailsModal(cweNum) {
+    const overlay = document.getElementById("cweModalOverlay");
+
+    const idEl = document.getElementById("modalCweId");
+    const nameEl = document.getElementById("modalCweName");
+    const descEl = document.getElementById("modalCweDesc");
+    const likelihoodEl = document.getElementById("modalCweLikelihood");
+    const relatedContainer = document.getElementById("modalRelatedContainer");
+    const relatedEl = document.getElementById("modalCweRelated");
+
+    idEl.textContent = `CWE-${cweNum}`;
+    nameEl.textContent = "Loading...";
+    descEl.textContent = "Fetching CWE definition from database...";
+    likelihoodEl.textContent = "...";
+    relatedContainer.classList.add("hidden");
+
+    overlay.classList.remove("hidden");
+    setTimeout(() => overlay.classList.add("open"), 10);
+
+    try {
+        const response = await fetch(`${API_HOST}/cwe/num/${cweNum}`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) throw new Error("CWE not found");
+
+        const data = await response.json();
+
+        idEl.textContent = data.cweId;
+        nameEl.textContent = data.cweName;
+
+        descEl.textContent = data.shortDescription || "No description available.";
+
+        likelihoodEl.textContent = data.likelihood || "Unknown";
+
+        if (data.related) {
+            try {
+                const relatedJson = JSON.parse(data.related);
+                relatedEl.textContent = JSON.stringify(relatedJson, null, 2);
+                relatedContainer.classList.remove("hidden");
+            } catch (e) {
+                relatedEl.textContent = data.related;
+                relatedContainer.classList.remove("hidden");
+            }
+        }
+
+    } catch (e) {
+        console.error(e);
+        nameEl.textContent = "Error Loading CWE";
+        descEl.textContent = "Could not fetch details. Please try again later.";
+    }
+}
+
+function setupCweModal() {
+    const overlay = document.getElementById("cweModalOverlay");
+    const closeBtn = document.getElementById("closeCweModal");
+    const container = overlay.querySelector('.modal-container');
+
+    const closeModal = () => {
+        overlay.classList.remove("open");
+        setTimeout(() => overlay.classList.add("hidden"), 300);
+    };
+
+    if (closeBtn) closeBtn.addEventListener("click", closeModal);
+
+    if (overlay) {
+        overlay.addEventListener("click", (e) => {
+            if (e.target === overlay) {
+                closeModal();
+            }
+        });
+    }
+
+    if (container) {
+        container.addEventListener("click", (e) => e.stopPropagation());
+    }
 }

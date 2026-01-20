@@ -66,6 +66,8 @@ public class CallbackRequest {
         private String solution;
         @JsonProperty("cwe_id")
         private String cweId;
+        @JsonProperty("wasc_id")
+        private String wascId;
 
         private List<ZapEvidenceDto> evidence;
     }

@@ -143,9 +143,46 @@
         <p id="drawerDesc">Fetching detailed description...</p>
       </div>
 
+      <div id="drawerSolutionContainer" style="display:none; margin-top: 15px;">
+        <h5>Solution</h5>
+        <div id="drawerSolution" class="text-content"></div>
+      </div>
+
       <div class="detail-group">
         <label>Evidence / Extractor:</label>
         <pre id="drawerEvidence">No evidence data available yet.</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CWE Modal Overlay -->
+<div id="cweModalOverlay" class="modal-overlay hidden">
+  <div class="modal-container">
+    <button id="closeCweModal" class="modal-close">&times;</button>
+
+    <!-- Header -->
+    <div class="modal-header">
+      <span id="modalCweId" class="badge-cwe">CWE-???</span>
+      <h3 id="modalCweName">Loading...</h3>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <div class="modal-row">
+        <strong>Likelihood:</strong>
+        <span id="modalCweLikelihood">...</span>
+      </div>
+
+      <div class="modal-section">
+        <h4>Description</h4>
+        <p id="modalCweDesc">Loading details...</p>
+      </div>
+
+      <!-- Extended Info (Optional) -->
+      <div id="modalRelatedContainer" class="modal-section hidden">
+        <h4>Related Relationships</h4>
+        <div id="modalCweRelated" class="code-block"></div>
       </div>
     </div>
   </div>

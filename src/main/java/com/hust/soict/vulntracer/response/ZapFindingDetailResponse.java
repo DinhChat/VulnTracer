@@ -1,31 +1,23 @@
-package com.hust.soict.vulntracer.model;
+package com.hust.soict.vulntracer.response;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ZapFinding {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ZapFindingDetailResponse {
     private Long zapFindingId;
-
-    @ManyToOne
-    @JoinColumn(name = "scan_id")
-    private Scan scan;
-
     private String pluginId;
     private String name;
     private String confidence;
     private String severity;
-    @Column(columnDefinition = "TEXT")
     private String description;
-    @Column(columnDefinition = "TEXT")
     private String solution;
     private String cweId;
     private String wascId;
+    private List<ZapEvidenceResponse> evidences;
 }
