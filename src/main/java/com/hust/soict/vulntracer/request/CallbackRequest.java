@@ -12,7 +12,7 @@ public class CallbackRequest {
     private String status;
     private String completedAt;
 
-    private Map<String, NucleiResultDto> results;
+    private Map<String, Object> results;
 
     @Data
     public static class NucleiResultDto {
@@ -21,7 +21,61 @@ public class CallbackRequest {
         private SummaryDto summary;
         @JsonProperty("target_updates")
         private TargetUpdateDto targetUpdates;
-        private List<VulnerabilityDto> vulnerabilities;
+        private List<NucleiVulnerabilityDto > vulnerabilities;
+    }
+
+    @Data
+    public static class NucleiVulnerabilityDto  {
+        private String template_id;
+        private String name;
+        private String severity;
+        private String description;
+        @JsonProperty("matched_at")
+        private String matchedAt;
+        @JsonProperty("cwe_ids")
+        private List<String> cweIds;
+        private List<String> references;
+
+        private NucleiEvidenceDto evidence;
+    }
+
+    @Data
+    public static class NucleiEvidenceDto  {
+        private String type;
+        private String command;
+        private List<String> resources;
+    }
+
+    @Data
+    public static class ZapResultDto {
+        private String status;
+        private SummaryDto summary;
+        @JsonProperty("target_updates")
+        private TargetUpdateDto targetUpdates;
+        private List<ZapVulnerabilityDto> vulnerabilities;
+    }
+
+    @Data
+    public static class ZapVulnerabilityDto {
+        @JsonProperty("plugin_id")
+        private String pluginId;
+        private String name;
+        private String severity;
+        private String confidence;
+        private String description;
+        private String solution;
+        @JsonProperty("cwe_id")
+        private String cweId;
+
+        private List<ZapEvidenceDto> evidence;
+    }
+
+    @Data
+    public static class ZapEvidenceDto {
+        private String uri;
+        private String method;
+        private String param;
+        private String evidence;
     }
 
     @Data
@@ -46,27 +100,5 @@ public class CallbackRequest {
             if (port instanceof String) return Integer.valueOf((String) port);
             return null;
         }
-    }
-
-    @Data
-    public static class VulnerabilityDto {
-        private String template_id;
-        private String name;
-        private String severity;
-        private String description;
-        @JsonProperty("matched_at")
-        private String matchedAt;
-        @JsonProperty("cwe_ids")
-        private List<String> cweIds;
-        private List<String> references;
-
-        private EvidenceDto evidence;
-    }
-
-    @Data
-    public static class EvidenceDto {
-        private String type;
-        private String command;
-        private List<String> resources;
     }
 }

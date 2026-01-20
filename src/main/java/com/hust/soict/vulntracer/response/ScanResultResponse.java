@@ -9,8 +9,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ScanResultResponse {
+public class ScanResultResponse<T> {
     private ScanInfoResponse scan;
     private VulnerabilitySummaryResponse summary;
-    private List<NucleiFindingResponse> vulnerabilities;
+    private List<T> vulnerabilities;
 }

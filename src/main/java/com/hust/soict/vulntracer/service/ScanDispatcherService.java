@@ -20,7 +20,7 @@ import java.util.Map;
 @Service
 public class ScanDispatcherService {
     private final RestTemplate restTemplate;
-    private static final String BASE_URL = "http://192.168.1.89:3000";
+    private static final String BASE_URL = "http://192.168.156.32:3000";
 
     public ScanDispatcherService(RestTemplateBuilder builder) {
         this.restTemplate = builder
@@ -74,7 +74,7 @@ public class ScanDispatcherService {
                 .scan_id(scan.getScanId())
                 .target_url(scan.getApplication().getApplicationUrl())
                 .scan_tools(scan.getScanTools())
-                .callback_url("http://192.168.1.146:8080/scan/callback")
+                .callback_url("http://192.168.156.185:8080/scan/callback")
                 .scan_parameters(Map.of())
                 .build();
     }

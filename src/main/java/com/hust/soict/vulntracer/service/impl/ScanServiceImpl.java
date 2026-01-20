@@ -1,5 +1,6 @@
 package com.hust.soict.vulntracer.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hust.soict.vulntracer.model.*;
 import com.hust.soict.vulntracer.repository.*;
 import com.hust.soict.vulntracer.request.CallbackRequest;
@@ -18,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -30,6 +32,10 @@ public class ScanServiceImpl implements ScanService {
     private final CWERepository cweRepository;
     private final NucleiFindingCweRepository nucleiFindingCweRepository;
     private final NucleiEvidenceRepository nucleiEvidenceRepository;
+    private final ZapFindingRepository zapFindingRepository;
+    private final ZapEvidenceRepository zapEvidenceRepository;
+    private final ZapFindingCweRepository zapFindingCweRepository;
+    private final ObjectMapper objectMapper;
 
     @Autowired
     public ScanServiceImpl(
@@ -40,7 +46,11 @@ public class ScanServiceImpl implements ScanService {
             NucleiFindingRepository nucleiFindingRepository,
             CWERepository cweRepository,
             NucleiFindingCweRepository nucleiFindingCweRepository,
-            NucleiEvidenceRepository nucleiEvidenceRepository
+            NucleiEvidenceRepository nucleiEvidenceRepository,
+            ZapFindingRepository zapFindingRepository,
+            ZapEvidenceRepository zapEvidenceRepository,
+            ZapFindingCweRepository zapFindingCweRepository,
+            ObjectMapper objectMapper
     ) {
         this.scanRepository = scanRepository;
         this.userRepository = userRepository;
@@ -50,6 +60,10 @@ public class ScanServiceImpl implements ScanService {
         this.cweRepository = cweRepository;
         this.nucleiFindingCweRepository = nucleiFindingCweRepository;
         this.nucleiEvidenceRepository = nucleiEvidenceRepository;
+        this.zapFindingRepository = zapFindingRepository;
+        this.zapEvidenceRepository = zapEvidenceRepository;
+        this.zapFindingCweRepository = zapFindingCweRepository;
+        this.objectMapper = objectMapper;
     }
 
 
@@ -138,30 +152,47 @@ public class ScanServiceImpl implements ScanService {
     @Transactional
     public void handleCallback(CallbackRequest req) throws ResponseStatusException {
         Scan scan = scanRepository.findById(req.getScanId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Scan not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Scan not found"));
         scan.setStatus(SCAN_STATUS.valueOf(req.getStatus()));
         scan.setCompletedAt(parseTime(req.getCompletedAt()));
 
-        CallbackRequest.NucleiResultDto nuclei = req.getResults() != null
-                ? req.getResults().get("nuclei")
-                : null;
+        if (req.getResults().containsKey("nuclei")) {
+            CallbackRequest.NucleiResultDto nuclei = objectMapper.convertValue(
+                    req.getResults().get("nuclei"),
+                    CallbackRequest.NucleiResultDto.class
+            );
 
-        if (nuclei != null) {
-            if (nuclei.getSummary() != null) {
-                scan.setTotal(nuclei.getSummary().getTotal());
-                scan.setCritical(nuclei.getSummary().getCritical());
-                scan.setHigh(nuclei.getSummary().getHigh());
-                scan.setMedium(nuclei.getSummary().getMedium());
-                scan.setLow(nuclei.getSummary().getLow());
-                scan.setInfo(nuclei.getSummary().getInfo());
-            }
+            saveScanSummary(scan, nuclei.getSummary());
+            processNucleiFindings(scan, nuclei);
         }
 
-        assert nuclei != null;
-        if (nuclei.getVulnerabilities() != null) {
-            for (CallbackRequest.VulnerabilityDto vuln : nuclei.getVulnerabilities()) {
+        else if (req.getResults().containsKey("zap")) {
+            CallbackRequest.ZapResultDto zap = objectMapper.convertValue(
+                    req.getResults().get("zap"),
+                    CallbackRequest.ZapResultDto.class
+            );
+
+            saveScanSummary(scan, zap.getSummary());
+            processZapFindings(scan, zap);
+        }
+
+        scanRepository.save(scan);
+    }
+
+    private void saveScanSummary(Scan scan, CallbackRequest.SummaryDto summary) {
+        if (summary != null) {
+            scan.setTotal(summary.getTotal());
+            scan.setCritical(summary.getCritical() != null ? summary.getCritical() : 0);
+            scan.setHigh(summary.getHigh());
+            scan.setMedium(summary.getMedium());
+            scan.setLow(summary.getLow());
+            scan.setInfo(summary.getInfo());
+        }
+    }
+
+    private void processNucleiFindings(Scan scan, CallbackRequest.NucleiResultDto nuclei) {
+        if (nuclei != null && nuclei.getVulnerabilities() != null) {
+            for (CallbackRequest.NucleiVulnerabilityDto vuln : nuclei.getVulnerabilities()) {
 
                 NucleiFinding finding = new NucleiFinding();
                 finding.setScan(scan);
@@ -174,8 +205,14 @@ public class ScanServiceImpl implements ScanService {
                 finding = nucleiFindingRepository.save(finding);
 
                 if (vuln.getCweIds() != null && !vuln.getCweIds().isEmpty()) {
-                    for (String cweId : vuln.getCweIds()) {
-                        CWE cwe = cweRepository.findById(cweId).orElse(null);
+                    for (String rawCweId : vuln.getCweIds()) {
+
+                        String normalizedCweId = normalizeCweId(rawCweId);
+
+                        if (normalizedCweId == null) continue;
+
+                        CWE cwe = cweRepository.findById(normalizedCweId).orElse(null);
+
                         if (cwe != null) {
                             NucleiFindingCWE mapping = new NucleiFindingCWE();
                             mapping.setFinding(finding);
@@ -184,6 +221,7 @@ public class ScanServiceImpl implements ScanService {
                         }
                     }
                 }
+
 
                 if (vuln.getEvidence() != null) {
                     NucleiEvidence evidence = new NucleiEvidence();
@@ -196,12 +234,53 @@ public class ScanServiceImpl implements ScanService {
                 }
             }
         }
+    }
 
-        scanRepository.save(scan);
+    private void processZapFindings(Scan scan, CallbackRequest.ZapResultDto zapResult) {
+        if (zapResult.getVulnerabilities() == null) return;
+
+        for (CallbackRequest.ZapVulnerabilityDto vuln : zapResult.getVulnerabilities()) {
+
+            ZapFinding finding = new ZapFinding();
+            finding.setScan(scan);
+            finding.setPluginId(vuln.getPluginId());
+            finding.setName(vuln.getName());
+            finding.setSeverity(vuln.getSeverity());
+            finding.setConfidence(vuln.getConfidence());
+            finding.setDescription(vuln.getDescription());
+            finding.setSolution(vuln.getSolution());
+
+            finding = zapFindingRepository.save(finding);
+
+            if (vuln.getCweId() != null && !vuln.getCweId().isEmpty()) {
+                String normalizedCweId = "CWE-" + vuln.getCweId();
+                CWE cwe = cweRepository.findById(normalizedCweId).orElse(null);
+
+                if (cwe != null) {
+                    ZapFindingCWE mapping = new ZapFindingCWE();
+                    mapping.setZapFinding(finding);
+                    mapping.setCwe(cwe);
+                    zapFindingCweRepository.save(mapping);
+                }
+            }
+
+            if (vuln.getEvidence() != null) {
+                for (CallbackRequest.ZapEvidenceDto eviDto : vuln.getEvidence()) {
+                    ZapEvidence evidence = new ZapEvidence();
+                    evidence.setZapFinding(finding);
+                    evidence.setUri(eviDto.getUri());
+                    evidence.setMethod(eviDto.getMethod());
+                    evidence.setParam(eviDto.getParam());
+                    evidence.setEvidence(eviDto.getEvidence());
+
+                    zapEvidenceRepository.save(evidence);
+                }
+            }
+        }
     }
 
     @Override
-    public ScanResultResponse getScanResult(Long scanId, String username) throws ResponseStatusException {
+    public ScanResultResponse<?> getScanResult(Long scanId, String username) throws ResponseStatusException {
         Scan scan = scanRepository.findById(scanId)
                 .orElseThrow(() -> new RuntimeException("Scan not found"));
 
@@ -215,7 +294,12 @@ public class ScanServiceImpl implements ScanService {
                         .map(this::mapFinding)
                         .toList();
 
-        return ScanResultMapper.toResponse(scan, findingResponses);
+        List<ZapFinding> zapFindings = zapFindingRepository.findByScan(scan);
+        List<ZapFindingResponse> zapFindingResponses = zapFindings.stream()
+                .map(this::toZapFindingResponse)
+                .toList();
+
+        return ScanResultMapper.toResponse(scan, findingResponses, zapFindingResponses);
     }
 
     private LocalDateTime parseTime(String completedAt) {
@@ -251,6 +335,14 @@ public class ScanServiceImpl implements ScanService {
         return scanResponse;
     }
 
+    private String normalizeCweId(String rawCweId) {
+        if (rawCweId == null || rawCweId.isBlank()) return null;
+        if (rawCweId.startsWith("CWE-")) {
+            return rawCweId;
+        }
+        return "CWE-" + rawCweId.trim();
+    }
+
     private NucleiFindingResponse mapFinding(NucleiFinding finding) {
 
         NucleiFindingResponse res = new NucleiFindingResponse();
@@ -260,6 +352,18 @@ public class ScanServiceImpl implements ScanService {
         res.setName(finding.getName());
         res.setSeverity(finding.getSeverity());
         res.setMatchedAt(finding.getMatchedAt());
+        return res;
+    }
+
+    public ZapFindingResponse toZapFindingResponse(ZapFinding finding) {
+        ZapFindingResponse res = new ZapFindingResponse();
+        res.setZapFindingId(finding.getZapFindingId());
+        res.setPluginId(finding.getPluginId());
+        res.setName(finding.getName());
+        res.setConfidence(finding.getConfidence());
+        res.setSeverity(finding.getSeverity());
+        res.setDescription(finding.getDescription());
+        res.setSolution(finding.getSolution());
         return res;
     }
 }
